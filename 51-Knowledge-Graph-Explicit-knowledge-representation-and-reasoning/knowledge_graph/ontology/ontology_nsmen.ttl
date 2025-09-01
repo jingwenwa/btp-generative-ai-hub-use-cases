@@ -1,0 +1,159 @@
+@prefix : <http://example.org/nsmen#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+# Classes
+#################################################################
+:NSMen rdf:type rdfs:Class ;
+    rdfs:label "NS Men" ;
+    rdfs:comment "Represents a National Serviceman (NSMen) and his related activities." .
+
+:Intent rdf:type rdfs:Class ;
+    rdfs:label "Intent" ;
+    rdfs:comment "An intention or action expressed by an NSMen (e.g., Book IPPT, Cancel IPPT)." .
+
+:MedicalStatus rdf:type rdfs:Class ;
+    rdfs:label "Medical Status" ;
+    rdfs:comment "The medical evaluation result of the NSMen." .
+
+:IPPTSession rdf:type rdfs:Class ;
+    rdfs:label "IPPT Session" ;
+    rdfs:comment "A scheduled IPPT session at a specific date and location." .
+
+:Transaction rdf:type rdfs:Class ;
+    rdfs:label "Transaction" ;
+    rdfs:comment "A transaction record for booking, cancelling, or rescheduling IPPT sessions." .
+
+:EligibilityStatus rdf:type rdfs:Class ;
+    rdfs:label "Eligibility Status" ;
+    rdfs:comment "Indicates if the NSMen is eligible for IPPT booking, with reason." .
+
+:DateOfBirth rdf:type rdfs:Class ;
+    rdfs:label "Date of Birth" ;
+    rdfs:comment "Birthdate of the NSMen, used for age-based eligibility." .
+
+#################################################################
+# Object Properties
+#################################################################
+:hasIntent rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :Intent ;
+    rdfs:label "has intent" ; rdfs:comment "Links an NSMen to his declared intent." .
+
+:hasMedicalStatus rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :MedicalStatus ;
+    rdfs:label "has medical status" .
+
+:hasDOB rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :DateOfBirth ;
+    rdfs:label "has date of birth" .
+
+:hasEligibilityStatus rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :EligibilityStatus ;
+    rdfs:label "has eligibility status" .
+
+:hasTransaction rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :Transaction ;
+    rdfs:label "has transaction" .
+
+:session rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range :IPPTSession ;
+    rdfs:label "linked session" .
+
+#################################################################
+# Data Properties
+#################################################################
+:dob rdf:type rdf:Property ; rdfs:domain :DateOfBirth ; rdfs:range xsd:date ;
+    rdfs:label "date of birth" .
+
+:result rdf:type rdf:Property ; rdfs:domain :MedicalStatus ; rdfs:range xsd:string .
+
+:lastUpdated rdf:type rdf:Property ; rdfs:domain :MedicalStatus ; rdfs:range xsd:date .
+
+:isEligible rdf:type rdf:Property ; rdfs:domain :EligibilityStatus ; rdfs:range xsd:boolean .
+
+:reason rdf:type rdf:Property ; rdfs:domain :EligibilityStatus ; rdfs:range xsd:string .
+
+:transactionType rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range xsd:string .
+
+:status rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range xsd:string .
+
+:timestamp rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range xsd:dateTime .
+
+:date rdf:type rdf:Property ; rdfs:domain :IPPTSession ; rdfs:range xsd:date .
+
+:location rdf:type rdf:Property ; rdfs:domain :IPPTSession ; rdfs:range xsd:string .
+
+:availability rdf:type rdf:Property ; rdfs:domain :IPPTSession ; rdfs:range xsd:integer .
+
+#################################################################
+# Example Individuals
+#################################################################
+
+# John Doe - Successful booking
+:JohnDoe rdf:type :NSMen ;
+    :hasIntent :BookIPPT ;
+    :hasMedicalStatus :MSP_Passed ;
+    :hasDOB :JohnDOB ;
+    :hasEligibilityStatus :Eligibility_1 ;
+    :hasTransaction :Transaction_123 .
+
+:BookIPPT rdf:type :Intent ; rdfs:label "Book IPPT" .
+
+:MSP_Passed rdf:type :MedicalStatus ;
+    :result "Pass" ;
+    :lastUpdated "2025-06-15"^^xsd:date .
+
+:JohnDOB rdf:type :DateOfBirth ;
+    :dob "1990-06-12"^^xsd:date .
+
+:Eligibility_1 rdf:type :EligibilityStatus ;
+    :isEligible true ;
+    :reason "Medically cleared and within IPPT age range" .
+
+:IPPT_2025_08_25 rdf:type :IPPTSession ;
+    :date "2025-08-25"^^xsd:date ;
+    :location "Khatib Camp" ;
+    :availability 10 .
+
+:Transaction_123 rdf:type :Transaction ;
+    :transactionType "Book" ;
+    :status "Success" ;
+    :timestamp "2025-08-22T10:00:00"^^xsd:dateTime ;
+    :session :IPPT_2025_08_25 .
+
+# Alex Tan - Failed due to medical
+:AlexTan rdf:type :NSMen ;
+    :hasIntent :BookIPPT ;
+    :hasMedicalStatus :MSP_Failed ;
+    :hasDOB :AlexDOB ;
+    :hasEligibilityStatus :Eligibility_2 .
+
+:MSP_Failed rdf:type :MedicalStatus ;
+    :result "Fail" ;
+    :lastUpdated "2025-07-10"^^xsd:date .
+
+:AlexDOB rdf:type :DateOfBirth ;
+    :dob "1985-01-05"^^xsd:date .
+
+:Eligibility_2 rdf:type :EligibilityStatus ;
+    :isEligible false ;
+    :reason "Failed medical screening." .
+
+# Lim Wei - Cancelled booking
+:LimWei rdf:type :NSMen ;
+    :hasIntent :CancelIPPT ;
+    :hasMedicalStatus :MSP_Passed ;
+    :hasDOB :LimDOB ;
+    :hasEligibilityStatus :Eligibility_3 ;
+    :hasTransaction :Transaction_456 .
+
+:CancelIPPT rdf:type :Intent ; rdfs:label "Cancel IPPT" .
+
+:LimDOB rdf:type :DateOfBirth ;
+    :dob "1992-11-30"^^xsd:date .
+
+:Eligibility_3 rdf:type :EligibilityStatus ;
+    :isEligible true ;
+    :reason "Eligible but cancelled booking." .
+
+:Transaction_456 rdf:type :Transaction ;
+    :transactionType "Cancel" ;
+    :status "Cancelled" ;
+    :timestamp "2025-08-20T15:30:00"^^xsd:dateTime ;
+    :session :IPPT_2025_08_25 .

@@ -217,7 +217,7 @@
         const sparqlQueryContainer = d3.select("#sparql-query-container");
         const sparqlQueryTextArea = d3.select("#sparql-query");
         const applyQueryButton = d3.select("#applyQuery");
-        const apiUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/execute_query_raw?format=csv";
+        const apiUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw?format=csv";
         const zoomInButton = d3.select("#zoom-in");
         const zoomOutButton = d3.select("#zoom-out");
         const zoomSlider = d3.select("#zoom-slider");
@@ -240,7 +240,7 @@ prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix owl: <http://www.w3.org/2002/07/owl#>
 
 CONSTRUCT {?s ?p ?o}
-FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology>
+FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology-test>
 WHERE {
     {
         {?p a owl:ObjectProperty .}

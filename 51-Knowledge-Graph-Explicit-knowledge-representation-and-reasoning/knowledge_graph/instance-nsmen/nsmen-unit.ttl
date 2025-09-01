@@ -1,0 +1,30 @@
+@prefix :      <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf-test/> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+### Classes
+:Unit a owl:Class ;
+    rdfs:label "NS Unit" ;
+    rdfs:comment "A military unit where NSmen are assigned." .
+
+:Reservist a owl:Class ;
+    rdfs:label "Reservist" ;
+    rdfs:comment "An NSman serving in the SAF during ICT or mobilization." .
+
+:Role a owl:Class ;
+    rdfs:label "Role" ;
+    rdfs:comment "The role or function an NSman performs in the unit." .
+
+### Individuals
+:2PDF a :Unit ;
+    rdfs:label "2nd People's Defence Force" .
+
+:Reservist001 a :Reservist ;
+    rdfs:label "SGT Tan Wei Jie" ;
+    :assignedTo :2PDF ;
+    :hasRole :InfantrySectionCommander .
+
+:InfantrySectionCommander a :Role ;
+    rdfs:label "Infantry Section Commander" .

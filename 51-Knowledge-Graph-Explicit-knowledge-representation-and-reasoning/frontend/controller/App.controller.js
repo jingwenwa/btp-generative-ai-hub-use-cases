@@ -955,8 +955,8 @@ FROM TABLE_KG
 
           var newSparqlValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").getValue();
 
-          var sUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/execute_query_raw";
-          var sKGSemanticsSQLUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/execute_query_raw?query_type=sql";
+          var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
+          var sKGSemanticsSQLUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw?query_type=sql";
 
           var that = this;
 
@@ -1059,7 +1059,7 @@ FROM TABLE_KG
 
         var newSparqlValue = this.getView().byId("FPage8SparqlExplorer--generatedSparqlQueryForSparlExplorer").getValue();
 
-        var sUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/execute_query_raw";
+        var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
 
         var that = this;
 
@@ -1191,8 +1191,8 @@ FROM TABLE_KG
         this.getView().setModel(oModel, "kgSparqlTable");
 
         var that = this;
-        var sTranslateSqlUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/translate_nl_to_new";
-        var sUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/execute_query_raw?query_type=sql";
+        var sTranslateSqlUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/translate_nl_to_new";
+        var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.comexecute_query_raw?query_type=sql";
 
         const rawnlValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput").getValue();
         const searchValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").getValue();
@@ -1460,9 +1460,9 @@ FROM TABLE_KG
         // }
 
         var that = this;
-        var sUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/execute_query_raw";
+        var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
 
-        var sTranslateUrl = "https://kgwebinar.cfapps.eu12.hana.ondemand.com/translate_nl_to_sparql";
+        var sTranslateUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/translate_nl_to_sparql";
         var oModel = this.getView().getModel("kgSparqlTable");
 
         var oPayload = {

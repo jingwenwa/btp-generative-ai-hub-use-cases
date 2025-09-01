@@ -8,3 +8,6 @@ pandas
 numpy
 IPython
 generative-ai-hub-sdk
+flask
+flask-cors
+hana-ml

@@ -1,5 +1,6 @@
 import os
 import configparser
+from pathlib import Path
 from flask import Flask, request, jsonify, json, Response
 from flask_cors import CORS
 from hana_ml import dataframe
@@ -16,21 +17,32 @@ if 'VCAP_APPLICATION' in os.environ:
     hanaPort = os.getenv('DB_PORT')
     hanaUser = os.getenv('DB_USER')
     hanaPW = os.getenv('DB_PASSWORD')
-else:    
-    # Not running on Cloud Foundry, read from config.ini file
+else:
+    # Not running on Cloud Foundry, read from config.ini relative to this file
+    BASE_DIR = Path(__file__).resolve().parent
+    config_path = BASE_DIR / 'config.ini'
+
     config = configparser.ConfigParser()
-    config.read('config.ini')
-    hanaURL = config['database']['address']
-    hanaPort = config['database']['port']
-    hanaUser = config['database']['user']
-    hanaPW = config['database']['password']
+    read_files = config.read(config_path)
+
+    if not read_files:
+        raise FileNotFoundError(f"Could not find config file at {config_path}")
+
+    # Safely access the database section
+    if 'database' not in config:
+        raise KeyError("Missing 'database' section in config.ini")
+
+    hanaURL = config['database'].get('address')
+    hanaPort = config['database'].get('port')
+    hanaUser = config['database'].get('user')
+    hanaPW = config['database'].get('password')
 
 # Establish a connection to SAP HANA
 connection = dataframe.ConnectionContext(hanaURL, hanaPort, hanaUser, hanaPW)
 
 # Initialize the proxy client and LLM model globally
 proxy_client = get_proxy_client('gen-ai-hub')
-llm = ChatOpenAI(proxy_model_name='gpt-4', temperature=0, proxy_client=proxy_client)
+llm = ChatOpenAI(proxy_model_name='gpt-5', temperature=0, proxy_client=proxy_client)
 
 app = Flask(__name__)
 CORS(app)
@@ -348,7 +360,3 @@ def root():
 
 def create_app():
     return app
-
-# Start the Flask app
-if __name__ == '__main__':
-    app.run('0.0.0.0', 8080)

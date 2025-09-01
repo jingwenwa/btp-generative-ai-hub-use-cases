@@ -132,7 +132,7 @@ def kmeans_and_tsne(connection,
     return df_tsne_with_cluster, clusters_dict
 
 def label_clusters(profiling_string):
-    prompt=f"You will help to analyze the result of a machine learnirn algorithm for clustering on text data. \
+    prompt=f"You will help to analyze the result of a machine learning algorithm for clustering on text data. \
     The algorithm was used to find clusters in topics of customer advisory servises around various services of the SAP Cloud platform (BTP). \
     For each cluster, find a good label based on the topics of a few datapoint samples.\
     Return the output in the following format: \n CLUSTER 1 : label CLUSTER 2 : label ....\ \n do not add anythng other than clusters named and labels\

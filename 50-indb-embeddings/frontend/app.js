@@ -14,7 +14,7 @@ app.get('/getenvironmentvariables', function (req, res) {
     res.send(JSON.stringify(xvar))
 });
 
-var port = process.env.PORT || 30000;
+const port = process.env.PORT || 3000;  // Use CF port if available, otherwise 3000
 
 app.listen(port, function () {
     console.log('Example app listening on port ' + port);
