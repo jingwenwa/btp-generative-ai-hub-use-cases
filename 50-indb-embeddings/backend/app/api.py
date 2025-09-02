@@ -384,8 +384,8 @@ def get_project_details():
         SELECT a."architect", a."index" AS advisories_index, a."pcb_number", a."project_date", 
                a."project_number", a."solution", a."topic",
                c."comment", c."comment_date", c."index" AS comments_index
-        FROM {schema_name}.advisories4 a
-        LEFT JOIN {schema_name}.COMMENTS4 c
+        FROM DBUSER.advisories4 a
+        LEFT JOIN DBUSER.COMMENTS4 c
         ON a."project_number" = c."project_number"
         WHERE a."project_number" = {project_number}
     """
