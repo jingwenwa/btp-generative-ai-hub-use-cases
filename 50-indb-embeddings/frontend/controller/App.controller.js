@@ -32,7 +32,7 @@ sap.ui.define(
 
     const oConfigModel = sap.ui.getCore().getModel("endpoint");
     if (oConfigModel) {
-      const pyEndpoint = oConfigModel.getProperty("/pyEndpoint");
+      const pyEndpoint = "https://indb-embedding.cfapps.ap10.hana.ondemand.com";
       ALL_PROJECTS_EP = pyEndpoint + "/get_all_projects";
       PROJECT_DETAILS_EP = pyEndpoint + "/get_project_details";
       HANA_EMB_SEARCH_EP = pyEndpoint + "/compare_text_to_existing";
@@ -270,7 +270,7 @@ sap.ui.define(
         /** Improvements: for reusability of fragment */
         var oGridList1 = this.getView().byId(this.createId("FPage2AdvisoryBuddy--gridList"));
         oGridList1.setHeaderText("Top 5 Similar Requests: " + cleanValue);
-
+ 
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 

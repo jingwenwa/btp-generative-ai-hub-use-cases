@@ -34,7 +34,7 @@ sap.ui.define(
 
     const oConfigModel = sap.ui.getCore().getModel("endpoint");
     if (oConfigModel) {
-      const pyEndpoint = oConfigModel.getProperty("/pyEndpoint");
+      const pyEndpoint = "https://indb-embedding.cfapps.ap10.hana.ondemand.com";
       ALL_PROJECTS_EP = pyEndpoint + "/get_all_projects";
       PROJECT_DETAILS_EP = pyEndpoint + "/get_project_details";
       HANA_EMB_SEARCH_EP = pyEndpoint + "/compare_text_to_existing";
