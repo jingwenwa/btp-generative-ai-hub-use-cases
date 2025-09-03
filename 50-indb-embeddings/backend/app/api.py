@@ -6,6 +6,16 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from hana_ml import dataframe
 
+import math
+import pandas as pd
+
+import numpy as np
+
+def nan_to_null(df):
+    """Convert all NaN or NaT in a DataFrame to None for JSON serialization."""
+    return df.replace({np.nan: None, pd.NaT: None})
+
+
 # Check if the application is running on Cloud Foundry
 if 'VCAP_APPLICATION' in os.environ:
     from app.utilities_hana import kmeans_and_tsne  # works in CF
@@ -495,9 +505,8 @@ def get_project_details():
 
 @app.route('/get_all_projects', methods=['GET'])
 def get_all_projects():
-    schema_name = request.args.get('schema_name', 'DBUSER')  # Default schema
+    schema_name = request.args.get('schema_name', 'DBUSER')
     
-    # SQL query to retrieve all data from ADVISORIES and COMMENTS tables
     sql_query = f"""
         SELECT * FROM (
             SELECT a."architect", a."index" AS advisories_index, a."pcb_number", a."project_date", 
@@ -511,10 +520,11 @@ def get_all_projects():
         WHERE row_num = 1
     """
     hana_df = dataframe.DataFrame(connection, sql_query)
-    all_projects = hana_df.collect()  # Return results as a pandas DataFrame
+    
+    all_projects_df = hana_df.collect()
+    all_projects_df = nan_to_null(all_projects_df)  # <-- ensures no NaN
 
-    # Convert results to a list of dictionaries for JSON response
-    results = all_projects.to_dict(orient='records')
+    results = all_projects_df.to_dict(orient='records')
     return jsonify({"all_projects": results}), 200
 
 # -------------------------------
