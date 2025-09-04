@@ -20,5 +20,5 @@ cf set-env kgwebinar AICORE_BASE_URL 'https://api.ai.prod.ap-southeast-2.aws.ml.
 cf set-env kgwebinar AICORE_RESOURCE_GROUP 'default'
 cf restage kgwebinar
 
-cf set-env ui5node-poc-embedding KG_ENDPOINT https://kgwebinar.cfapps.ap10.hana.ondemand.com
-cf set-env ui5node-poc-embedding PY_ENDPOINT https://indb-embedding.cfapps.ap10.hana.ondemand.com
+cf set-env ui5node-poc-knowledgegraph KG_ENDPOINT https://kgapp.cfapps.ap10.hana.ondemand.com
+cf set-env ui5node-poc-knowledgegraph PY_ENDPOINT https://indb-embedding.cfapps.ap10.hana.ondemand.com
