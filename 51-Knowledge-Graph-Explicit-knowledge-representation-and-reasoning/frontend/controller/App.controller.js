@@ -2090,11 +2090,11 @@ FROM TABLE_KG
 
         var self = this;
         /** [TO IMPROVE: if change of fragment ID can lead to problems] */
-        // self.getView().byId("FPage2AdvisoryBuddy--gridList").setHeaderText("Top 5 Similar Requests: " + cleanValue);
+        // self.getView().byId("FPage2AdvisoryBuddy--gridList").setHeaderText("Top 5 Recommendations: " + cleanValue);
 
         /** Improvements: for reusability of fragment */
         var oGridList1 = this.getView().byId(this.createId("FPage2AdvisoryBuddy--gridList"));
-        oGridList1.setHeaderText("Top 5 Similar Requests: " + cleanValue);
+        oGridList1.setHeaderText("Top 5 Recommendations: " + cleanValue);
 
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
