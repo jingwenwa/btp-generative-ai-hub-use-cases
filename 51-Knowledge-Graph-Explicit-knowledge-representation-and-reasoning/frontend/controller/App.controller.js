@@ -3339,7 +3339,6 @@ FROM TABLE_KG
         chatModel.updateBindings(true);
         return systemMessage;
       },
-      
     });
   }
 );

@@ -259,38 +259,72 @@ def get_advisories_by_expert_and_category():
 def compare_text_to_existing():
     data = request.get_json()
     schema_name = data.get('schema_name', 'DBUSER')
-    query_text = data.get('query_text')
-    text_type = data.get('text_type', 'QUERY')
-    model_version = data.get('model_version', 'SAP_NEB.20240715')
-    
+    query_text = data.get('query_text', '')
+
     if not query_text:
-        return jsonify({"error": "Query text is required"}), 400
-    
-    sql_query = f"""
-            SELECT 
-                "SOLUTION" AS text,
-                "RULE_ID",
-                COSINE_SIMILARITY(
-                    "SOLUTION_EMBEDDING",
-                    VECTOR_EMBEDDING('{query_text}', '{text_type}', '{model_version}')
-                ) AS similarity
-            FROM dbuser.MHA_ADVISORIES4
-            UNION ALL
-            SELECT
-                "COMMENT" AS text,
-                "RULE_ID",
-                COSINE_SIMILARITY(
-                    "COMMENT_EMBEDDING",
-                    VECTOR_EMBEDDING('{query_text}', '{text_type}', '{model_version}')
-                ) AS similarity
-            FROM dbuser.MHA_COMMENTS4
-            ORDER BY similarity DESC
-            LIMIT 5
-    """
-    hana_df = dataframe.DataFrame(connection, sql_query)
-    similarities = hana_df.collect()
-    results = similarities.to_dict(orient='records')
-    return jsonify({"similarities": results}), 200
+        return jsonify({"error": "query_text is required"}), 400
+
+    similarities = []
+
+    # Extract NSMAN_ID from query_text
+    import re
+    nsman_match = re.search(r'ID\s*=\s*(\d+)', query_text, re.IGNORECASE)
+    nsman_id = nsman_match.group(1) if nsman_match else None
+
+    if not nsman_id:
+        return jsonify({"error": "NSMAN_ID not found in query_text"}), 400
+
+    # Extract LOCATION_NAME from query_text (optional)
+    loc_match = re.search(r'at (.+)', query_text, re.IGNORECASE)
+    location_name = loc_match.group(1).strip() if loc_match else None
+
+    # Case 1: LOCATION_NAME specified → fetch top 3 latest slots
+    if location_name:
+        slot_query = f"""
+            SELECT "LOCATION_NAME", "SLOT_DATE", "SLOT_TIME"
+            FROM {schema_name}.BOOKINGS_AVAILABILITY
+            WHERE "LOCATION_NAME" = '{location_name}'
+            ORDER BY "SLOT_DATE" DESC, "SLOT_TIME" DESC
+            LIMIT 3
+        """
+        slot_df = dataframe.DataFrame(connection, slot_query)
+        slots = slot_df.collect().to_dict(orient='records')
+
+        solution_vals = [
+            f"{slot['LOCATION_NAME']} | {slot['SLOT_DATE']} | {slot['SLOT_TIME']}" 
+            for slot in slots
+        ]
+        similarities.append({
+            "NSMAN_ID": nsman_id,
+            "SIMILARITY": "1",
+            "SOLUTION": solution_vals[0] if len(solution_vals) > 0 else None,
+            "SOLUTION_TWO": solution_vals[1] if len(solution_vals) > 1 else None,
+            "SOLUTION_THREE": solution_vals[2] if len(solution_vals) > 2 else None,
+        })
+
+    # Case 2: No LOCATION_NAME → fetch top 3 solutions from MHA_ADVISORIES4
+    else:
+        sql_query = f"""
+            SELECT "SOLUTION",
+                   "SOLUTION_TWO",
+                   "SOLUTION_THREE"
+            FROM {schema_name}.MHA_ADVISORIES4
+            WHERE "NSMAN_ID" = '{nsman_id}'
+            LIMIT 3
+        """
+        hana_df = dataframe.DataFrame(connection, sql_query)
+        solutions = hana_df.collect().to_dict(orient='records')
+        for sol in solutions:
+            similarities.append({
+                "NSMAN_ID": nsman_id,
+                "SIMILARITY": "1",
+                "SOLUTION": sol["SOLUTION"],
+                "SOLUTION_TWO": sol["SOLUTION_TWO"],
+                "SOLUTION_THREE": sol["SOLUTION_THREE"]
+            })
+
+    return jsonify({"similarities": similarities}), 200
+
 
 @app.route('/get_project_details', methods=['GET'])
 def get_project_details():
