@@ -1,0 +1,23 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/nsmen-ontology/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:JohnTan rdf:type :NSMan ;
+    :nricHash "S1234567Z_SHA256" ;
+    foaf:name "John Tan" ;
+    foaf:mbox "john.tan@example.com" ;
+    :hasPESStatus :PES_B ;
+    :servesIn :Unit_1SIR ;
+    :hasRank :Sergeant ;
+    :hasBooking :IPPTBooking_2025_0001 ;
+    :hasExitPermit :ExitPermit_2025_01 .
+
+:AliBinSaid rdf:type :NSMan ;
+    :nricHash "T9876543A_SHA256" ;
+    foaf:name "Ali Bin Said" ;
+    foaf:mbox "ali.said@example.com" ;
+    :hasPESStatus :PES_A ;
+    :servesIn :Unit_2PDF ;
+    :hasRank :Corporal ;
+    :hasBooking :IPPTBooking_2025_0002 ;
+    :hasDeferment :Deferment_Study_2025 .

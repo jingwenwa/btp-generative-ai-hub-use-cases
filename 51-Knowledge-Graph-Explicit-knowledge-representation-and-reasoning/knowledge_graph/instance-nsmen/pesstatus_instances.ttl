@@ -1,0 +1,8 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/nsmen-ontology/> .
+
+:PES_A rdf:type :PESStatus .
+:PES_B rdf:type :PESStatus .
+:PES_C rdf:type :PESStatus .
+:PES_D rdf:type :PESStatus .
+:PES_E rdf:type :PESStatus .
+:PES_F rdf:type :PESStatus .

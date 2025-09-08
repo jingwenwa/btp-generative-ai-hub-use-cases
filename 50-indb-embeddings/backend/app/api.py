@@ -9,6 +9,7 @@ from hana_ml import dataframe
 import math
 import pandas as pd
 import numpy as np
+import re
 
 def nan_to_null(df):
     """Convert all NaN or NaT in a DataFrame to None for JSON serialization."""
@@ -255,6 +256,11 @@ def get_advisories_by_expert_and_category():
     results = advisories_by_category.to_dict(orient='records')
     return jsonify({"advisories_by_category": results}), 200
 
+import re
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
 @app.route('/compare_text_to_existing', methods=['POST'])
 def compare_text_to_existing():
     data = request.get_json()
@@ -266,27 +272,40 @@ def compare_text_to_existing():
 
     similarities = []
 
-    # Extract NSMAN_ID from query_text
-    import re
+    # --- Extract NSMAN_ID ---
     nsman_match = re.search(r'ID\s*=\s*(\d+)', query_text, re.IGNORECASE)
     nsman_id = nsman_match.group(1) if nsman_match else None
-
     if not nsman_id:
         return jsonify({"error": "NSMAN_ID not found in query_text"}), 400
 
-    # Extract LOCATION_NAME from query_text (optional)
-    loc_match = re.search(r'at (.+)', query_text, re.IGNORECASE)
+    # --- Extract LOCATION_NAME (improved regex) ---
+    loc_match = re.search(
+        r'I want to book a slot\.\s*([A-Za-z0-9\s&\-]+)',
+        query_text,
+        re.IGNORECASE
+    )
     location_name = loc_match.group(1).strip() if loc_match else None
 
-    # Case 1: LOCATION_NAME specified → fetch top 3 latest slots
+    # --- Extract SLOT_DATE ---
+    date_match = re.search(r'(\d{4}-\d{2}-\d{2})', query_text)
+    slot_date = date_match.group(1) if date_match else None
+
+    # --- Case 1: If location_name is detected, query BOOKINGS_AVAILABILITY ---
     if location_name:
         slot_query = f"""
             SELECT "LOCATION_NAME", "SLOT_DATE", "SLOT_TIME"
             FROM {schema_name}.BOOKINGS_AVAILABILITY
-            WHERE "LOCATION_NAME" = '{location_name}'
+            WHERE UPPER("LOCATION_NAME") = UPPER('{location_name}')
+        """
+
+        if slot_date:
+            slot_query += f""" AND "SLOT_DATE" = '{slot_date}' """
+
+        slot_query += """
             ORDER BY "SLOT_DATE" DESC, "SLOT_TIME" DESC
             LIMIT 3
         """
+
         slot_df = dataframe.DataFrame(connection, slot_query)
         slots = slot_df.collect().to_dict(orient='records')
 
@@ -294,6 +313,7 @@ def compare_text_to_existing():
             f"{slot['LOCATION_NAME']} | {slot['SLOT_DATE']} | {slot['SLOT_TIME']}" 
             for slot in slots
         ]
+
         similarities.append({
             "NSMAN_ID": nsman_id,
             "SIMILARITY": "1",
@@ -302,7 +322,7 @@ def compare_text_to_existing():
             "SOLUTION_THREE": solution_vals[2] if len(solution_vals) > 2 else None,
         })
 
-    # Case 2: No LOCATION_NAME → fetch top 3 solutions from MHA_ADVISORIES4
+    # --- Case 2: No location_name → fallback to advisory table ---
     else:
         sql_query = f"""
             SELECT "SOLUTION",
@@ -329,33 +349,28 @@ def compare_text_to_existing():
 @app.route('/get_project_details', methods=['GET'])
 def get_project_details():
     schema_name = request.args.get('schema_name', 'DBUSER')
-    rule_id = request.args.get('project_number')
+    project_number = request.args.get('project_number')
     
-    if not rule_id:
+    if not project_number:
         return jsonify({"error": "Project number is required"}), 400
     
+    # SQL query to join ADVISORIES and COMMENTS tables on project_number
     sql_query = f"""
-        SELECT 
-            a."index" AS advisories_index,
-            a."NSMAN_ID",
-            a."BOOKING_ID",
-            a."START_TIME",
-            a."RULE_ID",
-            a."RULE_TYPE",
-            a."TOPIC",
-            a."SOLUTION",
-            c."COMMENT",
-            c."COMMENT_DATE",
-            c."index" AS comments_index
-        FROM {schema_name}.MHA_ADVISORIES4 a
-        LEFT JOIN {schema_name}.MHA_COMMENTS4 c
-        ON a."NSMAN_ID" = c."NSMAN_ID"
-        WHERE a."RULE_ID" = '{rule_id}'
+        SELECT a."architect", a."index" AS advisories_index, a."pcb_number", a."project_date", 
+               a."project_number", a."solution", a."topic",
+               c."comment", c."comment_date", c."index" AS comments_index
+        FROM {schema_name}.advisories4 a
+        LEFT JOIN {schema_name}.COMMENTS4 c
+        ON a."project_number" = c."project_number"
+        WHERE a."project_number" = {project_number}
     """
     hana_df = dataframe.DataFrame(connection, sql_query)
-    project_details = hana_df.collect()
+    project_details = hana_df.collect()  # Return results as a pandas DataFrame
+
+    # Convert results to a list of dictionaries for JSON response
     results = project_details.to_dict(orient='records')
     return jsonify({"project_details": results}), 200
+
 
 @app.route('/get_all_projects', methods=['GET'])
 def get_all_projects():
@@ -363,28 +378,21 @@ def get_all_projects():
     
     sql_query = f"""
         SELECT * FROM (
-            SELECT 
-                a."index" AS advisories_index,
-                a."NSMAN_ID",
-                a."BOOKING_ID",
-                a."START_TIME",
-                a."RULE_ID",
-                a."RULE_TYPE",
-                a."TOPIC",
-                a."SOLUTION",
-                c."COMMENT",
-                c."COMMENT_DATE",
-                c."index" AS comments_index,
-                ROW_NUMBER() OVER (PARTITION BY a."RULE_ID" ORDER BY a."index") AS row_num
-            FROM {schema_name}.MHA_ADVISORIES4 a
-            LEFT JOIN {schema_name}.MHA_COMMENTS4 c
-            ON a."NSMAN_ID" = c."NSMAN_ID"
+            SELECT a."architect", a."index" AS advisories_index, a."pcb_number", a."project_date", 
+                   a."project_number", a."solution", a."topic",
+                   c."comment", c."comment_date", c."index" AS comments_index,
+                   ROW_NUMBER() OVER (PARTITION BY a."project_number" ORDER BY a."index") AS row_num
+            FROM {schema_name}.advisories4 a
+            LEFT JOIN {schema_name}.COMMENTS4 c
+            ON a."project_number" = c."project_number"
         ) subquery
         WHERE row_num = 1
     """
     hana_df = dataframe.DataFrame(connection, sql_query)
+    
     all_projects_df = hana_df.collect()
-    all_projects_df = nan_to_null(all_projects_df)
+    all_projects_df = nan_to_null(all_projects_df)  # <-- ensures no NaN
+
     results = all_projects_df.to_dict(orient='records')
     return jsonify({"all_projects": results}), 200
 

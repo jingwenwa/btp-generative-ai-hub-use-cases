@@ -1,0 +1,192 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/nsmen-ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix time: <http://www.w3.org/2006/time#> .
+@prefix schema: <https://schema.org/> .
+
+<http://www.semanticweb.org/ontologies/2025/nsmen-ontology> rdf:type owl:Ontology ;
+    owl:imports <http://xmlns.com/foaf/0.1/> ,
+                <http://www.w3.org/2004/02/skos/core> ,
+                <http://www.w3.org/2006/time> ,
+                <https://schema.org/> .
+
+#################################################################
+# Classes
+#################################################################
+
+:NSMan rdf:type owl:Class ;
+    rdfs:subClassOf foaf:Person .
+
+:Unit rdf:type owl:Class ;
+    rdfs:subClassOf foaf:Organization .
+
+:ServiceBranch rdf:type owl:Class ;
+    rdfs:subClassOf :Unit .
+
+:PESStatus rdf:type owl:Class .
+:PES_A rdf:type owl:Class ; rdfs:subClassOf :PESStatus .
+:PES_B rdf:type owl:Class ; rdfs:subClassOf :PESStatus .
+:PES_C rdf:type owl:Class ; rdfs:subClassOf :PESStatus .
+:PES_D rdf:type owl:Class ; rdfs:subClassOf :PESStatus .
+:PES_E rdf:type owl:Class ; rdfs:subClassOf :PESStatus .
+:PES_F rdf:type owl:Class ; rdfs:subClassOf :PESStatus .
+
+:Rank rdf:type owl:Class .
+:CPL rdf:type owl:Class ; rdfs:subClassOf :Rank .
+:SGT rdf:type owl:Class ; rdfs:subClassOf :Rank .
+:LTA rdf:type owl:Class ; rdfs:subClassOf :Rank .
+:CPT rdf:type owl:Class ; rdfs:subClassOf :Rank .
+
+:ServiceType rdf:type owl:Class .
+:IPPT rdf:type owl:Class ; rdfs:subClassOf :ServiceType .
+
+:Booking rdf:type owl:Class .
+:IPPTBooking rdf:type owl:Class ; rdfs:subClassOf :Booking .
+
+:PolicyRule rdf:type owl:Class .
+:ExemptionRule rdf:type owl:Class ; rdfs:subClassOf :PolicyRule .
+:EligibilityRule rdf:type owl:Class ; rdfs:subClassOf :PolicyRule .
+:ObligationRule rdf:type owl:Class ; rdfs:subClassOf :PolicyRule .
+
+:IPPTAttempt rdf:type owl:Class .
+:ExitPermit rdf:type owl:Class .
+:Deferment rdf:type owl:Class .
+:Location rdf:type owl:Class .
+
+#################################################################
+# Object Properties
+#################################################################
+
+:hasPESStatus rdf:type owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range :PESStatus .
+
+:servesIn rdf:type owl:ObjectProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range :Unit .
+
+:hasRank rdf:type owl:ObjectProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range :Rank .
+
+:hasObligation rdf:type owl:ObjectProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range :ObligationRule .
+
+:hasBooking rdf:type owl:ObjectProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range :Booking .
+
+:occursAt rdf:type owl:ObjectProperty ;
+    rdfs:domain :Booking ;
+    rdfs:range :Location .
+
+:hasTime rdf:type owl:ObjectProperty ;
+    rdfs:domain :Booking ;
+    rdfs:range time:TemporalEntity .
+
+:appliesTo rdf:type owl:ObjectProperty ;
+    rdfs:domain :PolicyRule ;
+    rdfs:range [ owl:unionOf ( :NSMan :PESStatus :Unit ) ] .
+
+:hasScope rdf:type owl:ObjectProperty ;
+    rdfs:domain :PolicyRule ;
+    rdfs:range [ owl:unionOf ( :ServiceBranch :Unit ) ] .
+
+:hasDeferment rdf:type owl:ObjectProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range :Deferment .
+
+:hasExitPermit rdf:type owl:ObjectProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range :ExitPermit .
+
+#################################################################
+# Datatype Properties
+#################################################################
+
+:nricHash rdf:type owl:DatatypeProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range xsd:string .
+
+foaf:name rdf:type owl:DatatypeProperty ;
+    rdfs:domain [ owl:unionOf ( :NSMan :Unit :Location ) ] ;
+    rdfs:range xsd:string .
+
+foaf:mbox rdf:type owl:DatatypeProperty ;
+    rdfs:domain :NSMan ;
+    rdfs:range xsd:string .
+
+:bookingRef rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Booking ;
+    rdfs:range xsd:string .
+
+skos:prefLabel rdf:type owl:DatatypeProperty ;
+    rdfs:domain [ owl:unionOf ( :Booking :Deferment :ExitPermit ) ] ;
+    rdfs:range xsd:string .
+
+schema:identifier rdf:type owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:string .
+
+schema:dateCreated rdf:type owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:dateTime .
+
+schema:dateModified rdf:type owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:dateTime .
+
+time:hasBeginning rdf:type owl:DatatypeProperty ;
+    rdfs:domain time:Interval ;
+    rdfs:range xsd:dateTime .
+
+time:hasEnd rdf:type owl:DatatypeProperty ;
+    rdfs:domain time:Interval ;
+    rdfs:range xsd:dateTime .
+
+:attemptsPerYear rdf:type owl:DatatypeProperty ;
+    rdfs:domain :ObligationRule ;
+    rdfs:range xsd:integer .
+
+#################################################################
+# Example Individuals
+#################################################################
+
+:JohnTan rdf:type :NSMan ;
+    :nricHash "S1234567Z_SHA256" ;
+    foaf:name "John Tan" ;
+    foaf:mbox "john.tan@example.com" ;
+    :hasPESStatus :PES_B ;
+    :servesIn :Unit_1SIR ;
+    :hasRank :SGT ;
+    :hasBooking :IPPTBooking_2025_0001 ;
+    :hasExitPermit :ExitPermit_2025_01 .
+
+:Unit_1SIR rdf:type :Unit ;
+    schema:identifier "1SIR" ;
+    foaf:name "1st Singapore Infantry Regiment" .
+
+:PES_B rdf:type :PESStatus .
+
+:IPPTBooking_2025_0001 rdf:type :IPPTBooking ;
+    :bookingRef "IPPT-2025-0001" ;
+    skos:prefLabel "Confirmed" ;
+    :occursAt :Fitness_Centre_Khatib ;
+    :hasTime :IPPT_2025_0001_time .
+
+:Fitness_Centre_Khatib rdf:type :Location ;
+    foaf:name "Fitness Centre Khatib" .
+
+:IPPT_2025_0001_time rdf:type time:Interval ;
+    time:hasBeginning "2025-10-12T09:00:00"^^xsd:dateTime ;
+    time:hasEnd "2025-10-12T10:00:00"^^xsd:dateTime .
+
+:Rule_PESF_Exempt_IPPT rdf:type :ExemptionRule ;
+    :appliesTo :IPPT ;
+    :appliesTo :PES_F ;
+    schema:identifier "Policy-001" .

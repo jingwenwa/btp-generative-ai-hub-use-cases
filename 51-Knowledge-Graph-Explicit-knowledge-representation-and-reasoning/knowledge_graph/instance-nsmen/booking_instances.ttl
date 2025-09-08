@@ -1,0 +1,30 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/nsmen-ontology/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix time: <http://www.w3.org/2006/time#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:IPPTBooking_2025_0001 rdf:type :IPPTBooking ;
+    :bookingRef "IPPT-2025-0001" ;
+    skos:prefLabel "Confirmed" ;
+    :occursAt :Fitness_Centre_Khatib ;
+    :hasTime :IPPT_2025_0001_time .
+
+:IPPTBooking_2025_0002 rdf:type :IPPTBooking ;
+    :bookingRef "IPPT-2025-0002" ;
+    skos:prefLabel "Cancelled" ;
+    :occursAt :Fitness_Centre_Kranji ;
+    :hasTime :IPPT_2025_0002_time .
+
+:IPPT_2025_0001_time rdf:type time:Interval ;
+    time:hasBeginning "2025-10-12T09:00:00"^^xsd:dateTime ;
+    time:hasEnd "2025-10-12T10:00:00"^^xsd:dateTime .
+
+:IPPT_2025_0002_time rdf:type time:Interval ;
+    time:hasBeginning "2025-11-01T16:00:00"^^xsd:dateTime ;
+    time:hasEnd "2025-11-01T17:00:00"^^xsd:dateTime .
+
+:Fitness_Centre_Khatib rdf:type :Location ;
+    foaf:name "Fitness Centre Khatib" .
+
+:Fitness_Centre_Kranji rdf:type :Location ;
+    foaf:name "Fitness Centre Kranji" .
