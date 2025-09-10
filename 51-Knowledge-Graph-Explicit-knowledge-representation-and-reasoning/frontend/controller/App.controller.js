@@ -1,7 +1,8 @@
 "use strict";
 
 sap.ui.define(
-  ["sap/base/Log",
+  [
+    "sap/base/Log",
     "sap/ui/core/mvc/Controller",
     "sap/tnt/library",
     "sap/ui/Device",
@@ -18,40 +19,71 @@ sap.ui.define(
     "sap/ui/model/FilterOperator",
     "sap/viz/ui5/data/FlattenedDataset",
     "sap/viz/ui5/controls/common/feeds/FeedItem",
-    'sap/viz/ui5/controls/Popover',
-    'sap/ui/core/HTML',
+    "sap/viz/ui5/controls/Popover",
+    "sap/ui/core/HTML",
     "sap/m/Column",
-    "sap/m/Text"],
-  function (Log, BaseController, tntLib, Device, JSONModel, MessageToast, require, FlexibleColumnLayout, Fragment, DragInfo, DropInfo, GridDropInfo, coreLibrary, Filter, FilterOperator, FlattenedDataset, FeedItem, Popover, HTMLControl, Column, Text) {
-
+    "sap/m/Text",
+  ],
+  function (
+    Log,
+    BaseController,
+    tntLib,
+    Device,
+    JSONModel,
+    MessageToast,
+    require,
+    FlexibleColumnLayout,
+    Fragment,
+    DragInfo,
+    DropInfo,
+    GridDropInfo,
+    coreLibrary,
+    Filter,
+    FilterOperator,
+    FlattenedDataset,
+    FeedItem,
+    Popover,
+    HTMLControl,
+    Column,
+    Text
+  ) {
     /**
      * ENVIRONMENT VARIABLE MANAGEMENT
      * - Here in NodeJS, we manage the environment variables from SAPUI5 Component.js.
      * - Basically the endpoints are fetched then store in the UI model of endpoint.
      * - Then we parse it to each GLOBAL variables to be consumed.
      */
-    var ALL_PROJECTS_EP, PROJECT_DETAILS_EP, HANA_EMB_SEARCH_EP, ALL_PROJECTS_BY_EXPERT_EP, ALL_PROJECTS_CATEGORIES_EP, ALL_CATEGORIES_EP, UPDATE_CATEGORIES_EP, ALL_CLUSTERS_EP;
+    var ALL_PROJECTS_EP,
+      PROJECT_DETAILS_EP,
+      HANA_EMB_SEARCH_EP,
+      ALL_PROJECTS_BY_EXPERT_EP,
+      ALL_PROJECTS_CATEGORIES_EP,
+      ALL_CATEGORIES_EP,
+      UPDATE_CATEGORIES_EP,
+      ALL_CLUSTERS_EP;
 
     const oConfigModel = sap.ui.getCore().getModel("endpoint");
     if (oConfigModel) {
-      const pyEndpoint = "https://indb-embedding.cfapps.ap10.hana.ondemand.com";
+      const pyEndpoint = oConfigModel.getProperty("/pyEndpoint");
       ALL_PROJECTS_EP = pyEndpoint + "/get_all_projects";
       PROJECT_DETAILS_EP = pyEndpoint + "/get_project_details";
       HANA_EMB_SEARCH_EP = pyEndpoint + "/compare_text_to_existing";
-      ALL_PROJECTS_BY_EXPERT_EP = pyEndpoint + "/get_advisories_by_expert_and_category";
+      ALL_PROJECTS_BY_EXPERT_EP =
+        pyEndpoint + "/get_advisories_by_expert_and_category";
       ALL_PROJECTS_CATEGORIES_EP = pyEndpoint + "/get_all_project_categories";
       ALL_CATEGORIES_EP = pyEndpoint + "/get_categories";
       UPDATE_CATEGORIES_EP = pyEndpoint + "/update_categories_and_projects";
     }
 
     /** URL ENDPOINTS FOR ADVISORY USE CASE NAVIGATION */
-    const COINSTAR_URL = "https://partner-innovation-labs.launchpad.cfapps.eu10.hana.ondemand.com/site?siteId=ad630cb6-3c21-4c62-a834-779557ea8f48#managePSR-display?sap-ui-app-id-hint=saas_approuter_coil.coinstar.partnerservicerequests&/PartnerServiceRequest(ID=4b78084a-29c2-43b7-953d-51d642b2d68a,IsActiveEntity=true)?layout=TwoColumnsMidExpanded&sap-iapp-state=TASBVMT2FMXN8WWBL0QC6087UBCHISY6HFTT654E2";
-    const MSTEAMS_URL = "https://teams.microsoft.com/l/meetup-join/group/SOME_LONG_ID";
+    const COINSTAR_URL =
+      "https://partner-innovation-labs.launchpad.cfapps.eu10.hana.ondemand.com/site?siteId=ad630cb6-3c21-4c62-a834-779557ea8f48#managePSR-display?sap-ui-app-id-hint=saas_approuter_coil.coinstar.partnerservicerequests&/PartnerServiceRequest(ID=4b78084a-29c2-43b7-953d-51d642b2d68a,IsActiveEntity=true)?layout=TwoColumnsMidExpanded&sap-iapp-state=TASBVMT2FMXN8WWBL0QC6087UBCHISY6HFTT654E2";
+    const MSTEAMS_URL =
+      "https://teams.microsoft.com/l/meetup-join/group/SOME_LONG_ID";
     const HANA_EMB_SEARCH_SCHEMANAME = "DBUSER";
     const HANA_EMB_SEARCH_TABLENAME = "TCM_AUTOMATIC";
 
     var pieCategoryData;
-
 
     // shortcut for sap.ui.core.dnd.DropLayout
     var DropLayout = coreLibrary.dnd.DropLayout;
@@ -76,59 +108,6 @@ sap.ui.define(
       return { pages: [pageData] }; // Return the complete JSON object
     }
 
-    function copyToClipboard(text) {
-      if (!navigator.clipboard) {
-        // Fallback for older browsers (using the deprecated execCommand)
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand("copy"); // Deprecated, but still works in many cases
-          console.log("Text copied to clipboard (fallback method)");
-        } catch (err) {
-          console.error("Unable to copy to clipboard (fallback method): ", err);
-        }
-        document.body.removeChild(textArea);
-        return; // Exit early
-      }
-
-      // Modern approach using Clipboard API (preferred)
-      navigator.clipboard.writeText(text)
-        .then(() => {
-          console.log("Text copied to clipboard (Clipboard API)");
-        })
-        .catch(err => {
-          console.error("Unable to copy to clipboard (Clipboard API): ", err);
-        });
-    }
-
-    function openMSTeams(meetingUrl) {
-      if (meetingUrl) {
-        const teamsProtocol = "msteams://l/meeting/join/?url=" + encodeURIComponent(meetingUrl);
-        const fallbackUrl = meetingUrl; // Or your custom fallback URL
-
-        // Open the Teams protocol in a new tab/window
-        const newTab = window.open(teamsProtocol, '_blank'); // '_blank' opens in new tab
-
-        if (!newTab) { // Check if pop-up was blocked
-          alert('Pop-up blocked! Please allow pop-ups for this site to open the Teams meeting.');
-          return; // Stop execution to prevent redirect
-        }
-
-        // Fallback (only if the new tab is still accessible - popup blocker check)
-        setTimeout(() => {
-          if (newTab && newTab.closed) { // Check if the new tab was closed (likely by popup blocker or user)
-            window.open(fallbackUrl, '_blank'); // Open fallback in a new tab
-          } else if (newTab && newTab.location.href.startsWith(window.location.origin)) { //Check if the opened new tab is still on the same origin
-            newTab.location.href = fallbackUrl;
-          }
-        }, 2000); // Adjust timeout as needed
-      } else {
-        console.error("Meeting URL is required.");
-      }
-    }
-
     function transformDataForCategoryPieGlobal(apiData) {
       const categoryCounts = {};
 
@@ -142,10 +121,12 @@ sap.ui.define(
 
       // Transform the categoryCounts object into the desired array format
       const transformedData = {
-        Categories: Object.entries(categoryCounts).map(([Category, ProjectsCount]) => ({
-          Category,
-          ProjectsCount,
-        })),
+        Categories: Object.entries(categoryCounts).map(
+          ([Category, ProjectsCount]) => ({
+            Category,
+            ProjectsCount,
+          })
+        ),
       };
 
       return transformedData;
@@ -156,14 +137,13 @@ sap.ui.define(
         const categoriesResponse = await fetch(ALL_CATEGORIES_EP);
         const categories = await categoriesResponse.json();
 
-        const clusterData = categories.map(category => ({
+        const clusterData = categories.map((category) => ({
           index: category.index,
           category_descr: category.category_descr, // Renamed for clarity
-          category_label: category.category_label
+          category_label: category.category_label,
         }));
 
         return clusterData;
-
       } catch (error) {
         console.error("Error fetching cluster data:", error);
         return []; // Return an empty array in case of error
@@ -176,7 +156,7 @@ sap.ui.define(
       const groups = [];
       const nodeKeys = {};
       let nextNodeKey = 1;
-    
+
       // --- Helper functions (same as before) ---
       function getUniqueNodeKey(identifier) {
         if (!nodeKeys[identifier]) {
@@ -184,42 +164,61 @@ sap.ui.define(
         }
         return nodeKeys[identifier];
       }
-    
+
       function createNode(entityOrClassUri, details = {}) {
         if (nodeKeys[entityOrClassUri]) {
           return nodeKeys[entityOrClassUri];
         }
         const key = getUniqueNodeKey(entityOrClassUri);
-        nodes.push({ key, title: details.label || entityOrClassUri.split('/').pop(), label: details.label || entityOrClassUri.split('/').pop(), icon: details.icon || "sap-icon://circle-task-2", status: "Success", shape: details.shape || "Circle", group: details.group });
+        nodes.push({
+          key,
+          title: details.label || entityOrClassUri.split("/").pop(),
+          label: details.label || entityOrClassUri.split("/").pop(),
+          icon: details.icon || "sap-icon://circle-task-2",
+          status: "Success",
+          shape: details.shape || "Circle",
+          group: details.group,
+        });
         return key;
       }
-    
+
       // --- 1. Parse the Ontology TTL (same as before) ---
       const parsedOntology = { classes: {}, properties: {} };
-      const ttlLines = ontologyTTL.split('\n').filter(line => line.trim() && !line.startsWith('@prefix'));
-    
-      ttlLines.forEach(line => {
+      const ttlLines = ontologyTTL
+        .split("\n")
+        .filter((line) => line.trim() && !line.startsWith("@prefix"));
+
+      ttlLines.forEach((line) => {
         const parts = line.trim().split(/\s+/);
         if (parts.length >= 3) {
-          const subject = parts[0].replace(/[<>]/g, '');
-          const predicate = parts[1].replace(/[<>]/g, '');
-          const object = parts[2].replace(/[<>"']/g, '');
-    
-          if (predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
-            if (object === 'http://www.w3.org/2002/07/owl#Class') {
-              parsedOntology.classes[subject] = parsedOntology.classes[subject] || {};
-            } else if (object === 'http://www.w3.org/2002/07/owl#ObjectProperty') {
-              parsedOntology.properties[subject] = { type: 'object' };
-            } else if (object === 'http://www.w3.org/2002/07/owl#DatatypeProperty') {
-              parsedOntology.properties[subject] = { type: 'datatype' };
+          const subject = parts[0].replace(/[<>]/g, "");
+          const predicate = parts[1].replace(/[<>]/g, "");
+          const object = parts[2].replace(/[<>"']/g, "");
+
+          if (predicate === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") {
+            if (object === "http://www.w3.org/2002/07/owl#Class") {
+              parsedOntology.classes[subject] =
+                parsedOntology.classes[subject] || {};
+            } else if (
+              object === "http://www.w3.org/2002/07/owl#ObjectProperty"
+            ) {
+              parsedOntology.properties[subject] = { type: "object" };
+            } else if (
+              object === "http://www.w3.org/2002/07/owl#DatatypeProperty"
+            ) {
+              parsedOntology.properties[subject] = { type: "datatype" };
             }
-          } else if (predicate === 'http://www.w3.org/2000/01/rdf-schema#comment') {
+          } else if (
+            predicate === "http://www.w3.org/2000/01/rdf-schema#comment"
+          ) {
             if (parsedOntology.classes[subject]) {
               parsedOntology.classes[subject].comment = object;
             } else if (parsedOntology.properties[subject]) {
               parsedOntology.properties[subject].comment = object;
             }
-          } else if (predicate === 'http://www.w3.org/2000/01/rdf-schema#label') {
+          } else if (
+            predicate === "http://www.w3.org/2000/01/rdf-schema#label"
+          ) {
             if (parsedOntology.classes[subject]) {
               parsedOntology.classes[subject].label = object;
             } else if (parsedOntology.properties[subject]) {
@@ -228,61 +227,76 @@ sap.ui.define(
           }
         }
       });
-    
+
       console.log("Parsed Ontology (SPARQL):", parsedOntology);
-    
+
       // --- 2. Analyze the SPARQL Query ---
       const selectVarsMatch = sparqlQuery.match(/SELECT\s+(.*?)\s+FROM/s);
       const whereClauseMatch = sparqlQuery.match(/WHERE\s+\{(.*?)\}/s);
-    
-      const selectedVariables = selectVarsMatch ? selectVarsMatch[1].trim().split(/\s+/) : [];
-      const whereTriples = whereClauseMatch ? whereClauseMatch[1].trim().split(/\.\s*/) : [];
-    
+
+      const selectedVariables = selectVarsMatch
+        ? selectVarsMatch[1].trim().split(/\s+/)
+        : [];
+      const whereTriples = whereClauseMatch
+        ? whereClauseMatch[1].trim().split(/\.\s*/)
+        : [];
+
       const involvedEntities = new Set();
       const relationships = [];
       const variableToEntityMap = {}; // Map SPARQL variables to ontology entities
-    
+
       // Identify classes and properties from the SPARQL query
-      whereTriples.forEach(triple => {
+      whereTriples.forEach((triple) => {
         const parts = triple.trim().split(/\s+/);
         if (parts.length === 3) {
           const subject = parts[0];
           const predicate = parts[1];
           const object = parts[2];
-    
-          if (predicate === 'a' || predicate === 'rdf:type') {
-            involvedEntities.add(object.replace(/[<>]/g, '')); // It's a class
-            variableToEntityMap[subject] = object.replace(/[<>]/g, '');
-          } else if (predicate.startsWith(':') || predicate.startsWith('<http://www.semanticweb.org/')) {
+
+          if (predicate === "a" || predicate === "rdf:type") {
+            involvedEntities.add(object.replace(/[<>]/g, "")); // It's a class
+            variableToEntityMap[subject] = object.replace(/[<>]/g, "");
+          } else if (
+            predicate.startsWith(":") ||
+            predicate.startsWith("<http://www.semanticweb.org/")
+          ) {
             relationships.push({ subject, predicate, object });
           }
           involvedEntities.add(subject);
           involvedEntities.add(object);
         }
       });
-    
-      selectedVariables.forEach(variable => involvedEntities.add(variable));
-    
+
+      selectedVariables.forEach((variable) => involvedEntities.add(variable));
+
       const entityLabels = {};
       for (const entity of involvedEntities) {
-        const entityUri = entity.replace(/[<>]/g, '');
-        if (parsedOntology.classes[entityUri] && parsedOntology.classes[entityUri].label) {
+        const entityUri = entity.replace(/[<>]/g, "");
+        if (
+          parsedOntology.classes[entityUri] &&
+          parsedOntology.classes[entityUri].label
+        ) {
           entityLabels[entity] = parsedOntology.classes[entityUri].label;
-        } else if (parsedOntology.properties[entityUri] && parsedOntology.properties[entityUri].label) {
+        } else if (
+          parsedOntology.properties[entityUri] &&
+          parsedOntology.properties[entityUri].label
+        ) {
           entityLabels[entity] = parsedOntology.properties[entityUri].label;
         } else {
-          entityLabels[entity] = entity.startsWith(':') ? entity.substring(1) : entity.split('/').pop();
+          entityLabels[entity] = entity.startsWith(":")
+            ? entity.substring(1)
+            : entity.split("/").pop();
         }
       }
-    
+
       console.log("Involved Entities (SPARQL):", involvedEntities);
       console.log("Relationships (SPARQL):", relationships);
       console.log("Entity Labels (SPARQL):", entityLabels);
       console.log("Variable to Entity Map:", variableToEntityMap);
-    
+
       // --- 3. Generate Nodes ---
       for (const entity of involvedEntities) {
-        const entityUri = entity.replace(/[<>]/g, '');
+        const entityUri = entity.replace(/[<>]/g, "");
         const label = entityLabels[entity] || entity; // Use the variable name if no label found
         let shape = "Circle";
         if (parsedOntology.classes[entityUri]) {
@@ -290,25 +304,32 @@ sap.ui.define(
         }
         createNode(entity, { label, shape }); // Use the SPARQL variable as the initial key
       }
-    
+
       // --- 4. Generate Lines ---
       relationships.forEach(({ subject, predicate, object }) => {
-        const predicateUri = predicate.replace(/[<>]/g, '');
-    
+        const predicateUri = predicate.replace(/[<>]/g, "");
+
         // Try to use the mapped entity URIs if available, otherwise use the variables
         const fromNode = variableToEntityMap[subject] || subject;
         const toNode = variableToEntityMap[object] || object;
-    
+
         if (nodeKeys[fromNode] && nodeKeys[toNode]) {
-          const propertyLabel = parsedOntology.properties[predicateUri]?.label || predicateUri.split('/').pop() || predicateUri;
-          lines.push({ from: nodeKeys[fromNode], to: nodeKeys[toNode], label: propertyLabel });
+          const propertyLabel =
+            parsedOntology.properties[predicateUri]?.label ||
+            predicateUri.split("/").pop() ||
+            predicateUri;
+          lines.push({
+            from: nodeKeys[fromNode],
+            to: nodeKeys[toNode],
+            label: propertyLabel,
+          });
         }
       });
-    
+
       return new sap.ui.model.json.JSONModel({
         nodes: nodes,
         lines: lines,
-        groups: groups
+        groups: groups,
       });
     }
 
@@ -318,7 +339,7 @@ sap.ui.define(
     //   const groups = [];
     //   const nodeKeys = {};
     //   let nextNodeKey = 1;
-    
+
     //   // --- Helper functions ---
     //   function getUniqueNodeKey(identifier) {
     //     if (!nodeKeys[identifier]) {
@@ -326,7 +347,7 @@ sap.ui.define(
     //     }
     //     return nodeKeys[identifier];
     //   }
-    
+
     //   function createNode(entityOrClassUri, details = {}) {
     //     if (nodeKeys[entityOrClassUri]) {
     //       return nodeKeys[entityOrClassUri];
@@ -335,18 +356,18 @@ sap.ui.define(
     //     nodes.push({ key, title: details.label || entityOrClassUri.split('/').pop(), label: details.label || entityOrClassUri.split('/').pop(), icon: details.icon || "sap-icon://circle-task-2", status: "Success", shape: details.shape || "Circle", group: details.group });
     //     return key;
     //   }
-    
+
     //   // --- 1. Parse the Ontology TTL ---
     //   const parsedOntology = { classes: {}, properties: {} };
     //   const ttlLines = ontologyTTL.split('\n').filter(line => line.trim() && !line.startsWith('@prefix'));
-    
+
     //   ttlLines.forEach(line => {
     //     const parts = line.trim().split(/\s+/);
     //     if (parts.length >= 3) {
     //       const subject = parts[0].replace(/[<>]/g, '');
     //       const predicate = parts[1].replace(/[<>]/g, '');
     //       const object = parts[2].replace(/[<>"']/g, '');
-    
+
     //       if (predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
     //         if (object === 'http://www.w3.org/2002/07/owl#Class') {
     //           parsedOntology.classes[subject] = parsedOntology.classes[subject] || {};
@@ -370,9 +391,9 @@ sap.ui.define(
     //       }
     //     }
     //   });
-    
+
     //   console.log("Parsed Ontology:", parsedOntology);
-    
+
     //   // --- 2. Extract and Analyze the SPARQL Query ---
     //   const sparqlMatch = sqlSelectQuery.match(/SPARQL_TABLE\('(.*?)'\)/s);
     //   if (!sparqlMatch) {
@@ -381,16 +402,16 @@ sap.ui.define(
     //     return new sap.ui.model.json.JSONModel({ nodes: [], lines: [], groups: [] });
     //   }
     //   const sparqlQuery = sparqlMatch[1];
-    
+
     //   const selectVarsMatch = sparqlQuery.match(/SELECT\s+(.*?)\s+FROM/s);
     //   const whereClauseMatch = sparqlQuery.match(/WHERE\s+\{(.*?)\}/s);
-    
+
     //   const selectedVariables = selectVarsMatch ? selectVarsMatch[1].trim().split(/\s+/) : [];
     //   const whereTriples = whereClauseMatch ? whereClauseMatch[1].trim().split(/\.\s*/) : [];
-    
+
     //   const involvedEntities = new Set();
     //   const relationships = [];
-    
+
     //   // Identify classes and properties from the SPARQL query
     //   whereTriples.forEach(triple => {
     //     const parts = triple.trim().split(/\s+/);
@@ -398,7 +419,7 @@ sap.ui.define(
     //       const subject = parts[0];
     //       const predicate = parts[1];
     //       const object = parts[2];
-    
+
     //       if (predicate === 'a' || predicate === 'rdf:type') {
     //         involvedEntities.add(object.replace(/[<>]/g, '')); // It's a class
     //       } else if (predicate.startsWith(':') || predicate.startsWith('<http://www.semanticweb.org/')) {
@@ -408,9 +429,9 @@ sap.ui.define(
     //       involvedEntities.add(object);
     //     }
     //   });
-    
+
     //   selectedVariables.forEach(variable => involvedEntities.add(variable));
-    
+
     //   const entityLabels = {};
     //   for (const entity of involvedEntities) {
     //     const entityUri = entity.replace(/[<>]/g, '');
@@ -422,11 +443,11 @@ sap.ui.define(
     //       entityLabels[entity] = entity.startsWith(':') ? entity.substring(1) : entity.split('/').pop();
     //     }
     //   }
-    
+
     //   console.log("Involved Entities:", involvedEntities);
     //   console.log("Relationships:", relationships);
     //   console.log("Entity Labels:", entityLabels);
-    
+
     //   // --- 3. Generate Nodes ---
     //   for (const entity of involvedEntities) {
     //     const entityUri = entity.replace(/[<>]/g, '');
@@ -437,19 +458,19 @@ sap.ui.define(
     //     }
     //     createNode(entityUri, { label, shape });
     //   }
-    
+
     //   // --- 4. Generate Lines ---
     //   relationships.forEach(({ subject, predicate, object }) => {
     //     const subjectUri = subject.replace(/[<>]/g, '');
     //     const objectUri = object.replace(/[<>]/g, '');
     //     const predicateUri = predicate.replace(/[<>]/g, '');
-    
+
     //     if (nodeKeys[subjectUri] && nodeKeys[objectUri]) {
     //       const propertyLabel = parsedOntology.properties[predicateUri]?.label || predicateUri.split('/').pop() || predicateUri;
     //       lines.push({ from: nodeKeys[subjectUri], to: nodeKeys[objectUri], label: propertyLabel });
     //     }
     //   });
-    
+
     //   return new sap.ui.model.json.JSONModel({
     //     nodes: nodes, // The label is already set in the createNode function
     //     lines: lines,
@@ -463,7 +484,7 @@ sap.ui.define(
       const groups = [];
       const nodeKeys = {};
       let nextNodeKey = 1;
-    
+
       // --- Helper functions (same as before) ---
       function getUniqueNodeKey(identifier) {
         if (!nodeKeys[identifier]) {
@@ -471,42 +492,61 @@ sap.ui.define(
         }
         return nodeKeys[identifier];
       }
-    
+
       function createNode(entityOrClassUri, details = {}) {
         if (nodeKeys[entityOrClassUri]) {
           return nodeKeys[entityOrClassUri];
         }
         const key = getUniqueNodeKey(entityOrClassUri);
-        nodes.push({ key, title: details.label || entityOrClassUri.split('/').pop(), label: details.label || entityOrClassUri.split('/').pop(), icon: details.icon || "sap-icon://circle-task-2", status: "Success", shape: details.shape || "Circle", group: details.group });
+        nodes.push({
+          key,
+          title: details.label || entityOrClassUri.split("/").pop(),
+          label: details.label || entityOrClassUri.split("/").pop(),
+          icon: details.icon || "sap-icon://circle-task-2",
+          status: "Success",
+          shape: details.shape || "Circle",
+          group: details.group,
+        });
         return key;
       }
-    
+
       // --- 1. Parse the Ontology TTL (same as before) ---
       const parsedOntology = { classes: {}, properties: {} };
-      const ttlLines = ontologyTTL.split('\n').filter(line => line.trim() && !line.startsWith('@prefix'));
-    
-      ttlLines.forEach(line => {
+      const ttlLines = ontologyTTL
+        .split("\n")
+        .filter((line) => line.trim() && !line.startsWith("@prefix"));
+
+      ttlLines.forEach((line) => {
         const parts = line.trim().split(/\s+/);
         if (parts.length >= 3) {
-          const subject = parts[0].replace(/[<>]/g, '');
-          const predicate = parts[1].replace(/[<>]/g, '');
-          const object = parts[2].replace(/[<>"']/g, '');
-    
-          if (predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
-            if (object === 'http://www.w3.org/2002/07/owl#Class') {
-              parsedOntology.classes[subject] = parsedOntology.classes[subject] || {};
-            } else if (object === 'http://www.w3.org/2002/07/owl#ObjectProperty') {
-              parsedOntology.properties[subject] = { type: 'object' };
-            } else if (object === 'http://www.w3.org/2002/07/owl#DatatypeProperty') {
-              parsedOntology.properties[subject] = { type: 'datatype' };
+          const subject = parts[0].replace(/[<>]/g, "");
+          const predicate = parts[1].replace(/[<>]/g, "");
+          const object = parts[2].replace(/[<>"']/g, "");
+
+          if (predicate === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") {
+            if (object === "http://www.w3.org/2002/07/owl#Class") {
+              parsedOntology.classes[subject] =
+                parsedOntology.classes[subject] || {};
+            } else if (
+              object === "http://www.w3.org/2002/07/owl#ObjectProperty"
+            ) {
+              parsedOntology.properties[subject] = { type: "object" };
+            } else if (
+              object === "http://www.w3.org/2002/07/owl#DatatypeProperty"
+            ) {
+              parsedOntology.properties[subject] = { type: "datatype" };
             }
-          } else if (predicate === 'http://www.w3.org/2000/01/rdf-schema#comment') {
+          } else if (
+            predicate === "http://www.w3.org/2000/01/rdf-schema#comment"
+          ) {
             if (parsedOntology.classes[subject]) {
               parsedOntology.classes[subject].comment = object;
             } else if (parsedOntology.properties[subject]) {
               parsedOntology.properties[subject].comment = object;
             }
-          } else if (predicate === 'http://www.w3.org/2000/01/rdf-schema#label') {
+          } else if (
+            predicate === "http://www.w3.org/2000/01/rdf-schema#label"
+          ) {
             if (parsedOntology.classes[subject]) {
               parsedOntology.classes[subject].label = object;
             } else if (parsedOntology.properties[subject]) {
@@ -515,66 +555,87 @@ sap.ui.define(
           }
         }
       });
-    
+
       console.log("Parsed Ontology:", parsedOntology);
-    
+
       // --- 2. Extract and Analyze the SPARQL Query ---
       // Modified regex to be more lenient with whitespace and newlines
-      const sparqlMatch = sqlSelectQuery.match(/SPARQL_TABLE\s*\(\s*'([\s\S]*?)'\s*\)/i);
+      const sparqlMatch = sqlSelectQuery.match(
+        /SPARQL_TABLE\s*\(\s*'([\s\S]*?)'\s*\)/i
+      );
       if (!sparqlMatch || !sparqlMatch[1]) {
         console.error("Could not extract SPARQL query.");
-        return new sap.ui.model.json.JSONModel({ nodes: [], lines: [], groups: [] });
+        return new sap.ui.model.json.JSONModel({
+          nodes: [],
+          lines: [],
+          groups: [],
+        });
       }
       const sparqlQuery = sparqlMatch[1];
-    
-      const selectVarsMatch = sparqlQuery.match(/SELECT\s+(.*?)\s+FROM/si);
-      const whereClauseMatch = sparqlQuery.match(/WHERE\s+\{(.*?)\}/si);
-    
-      const selectedVariables = selectVarsMatch ? selectVarsMatch[1].trim().split(/\s+/) : [];
-      const whereTriples = whereClauseMatch ? whereClauseMatch[1].trim().split(/\.\s*/) : [];
-    
+
+      const selectVarsMatch = sparqlQuery.match(/SELECT\s+(.*?)\s+FROM/is);
+      const whereClauseMatch = sparqlQuery.match(/WHERE\s+\{(.*?)\}/is);
+
+      const selectedVariables = selectVarsMatch
+        ? selectVarsMatch[1].trim().split(/\s+/)
+        : [];
+      const whereTriples = whereClauseMatch
+        ? whereClauseMatch[1].trim().split(/\.\s*/)
+        : [];
+
       const involvedEntities = new Set();
       const relationships = [];
-    
+
       // Identify classes and properties from the SPARQL query
-      whereTriples.forEach(triple => {
+      whereTriples.forEach((triple) => {
         const parts = triple.trim().split(/\s+/);
         if (parts.length === 3) {
           const subject = parts[0];
           const predicate = parts[1];
           const object = parts[2];
-    
-          if (predicate === 'a' || predicate === 'rdf:type') {
-            involvedEntities.add(object.replace(/[<>]/g, '')); // It's a class
-          } else if (predicate.startsWith(':') || predicate.startsWith('<http://www.semanticweb.org/')) {
+
+          if (predicate === "a" || predicate === "rdf:type") {
+            involvedEntities.add(object.replace(/[<>]/g, "")); // It's a class
+          } else if (
+            predicate.startsWith(":") ||
+            predicate.startsWith("<http://www.semanticweb.org/")
+          ) {
             relationships.push({ subject, predicate, object });
           }
           involvedEntities.add(subject);
           involvedEntities.add(object);
         }
       });
-    
-      selectedVariables.forEach(variable => involvedEntities.add(variable));
-    
+
+      selectedVariables.forEach((variable) => involvedEntities.add(variable));
+
       const entityLabels = {};
       for (const entity of involvedEntities) {
-        const entityUri = entity.replace(/[<>]/g, '');
-        if (parsedOntology.classes[entityUri] && parsedOntology.classes[entityUri].label) {
+        const entityUri = entity.replace(/[<>]/g, "");
+        if (
+          parsedOntology.classes[entityUri] &&
+          parsedOntology.classes[entityUri].label
+        ) {
           entityLabels[entity] = parsedOntology.classes[entityUri].label;
-        } else if (parsedOntology.properties[entityUri] && parsedOntology.properties[entityUri].label) {
+        } else if (
+          parsedOntology.properties[entityUri] &&
+          parsedOntology.properties[entityUri].label
+        ) {
           entityLabels[entity] = parsedOntology.properties[entityUri].label;
         } else {
-          entityLabels[entity] = entity.startsWith(':') ? entity.substring(1) : entity.split('/').pop();
+          entityLabels[entity] = entity.startsWith(":")
+            ? entity.substring(1)
+            : entity.split("/").pop();
         }
       }
-    
+
       console.log("Involved Entities:", involvedEntities);
       console.log("Relationships:", relationships);
       console.log("Entity Labels:", entityLabels);
-    
+
       // --- 3. Generate Nodes ---
       for (const entity of involvedEntities) {
-        const entityUri = entity.replace(/[<>]/g, '');
+        const entityUri = entity.replace(/[<>]/g, "");
         const label = entityLabels[entity];
         let shape = "Circle";
         if (parsedOntology.classes[entityUri]) {
@@ -582,26 +643,33 @@ sap.ui.define(
         }
         createNode(entityUri, { label, shape });
       }
-    
+
       // --- 4. Generate Lines ---
       relationships.forEach(({ subject, predicate, object }) => {
-        const subjectUri = subject.replace(/[<>]/g, '');
-        const objectUri = object.replace(/[<>]/g, '');
-        const predicateUri = predicate.replace(/[<>]/g, '');
-    
+        const subjectUri = subject.replace(/[<>]/g, "");
+        const objectUri = object.replace(/[<>]/g, "");
+        const predicateUri = predicate.replace(/[<>]/g, "");
+
         if (nodeKeys[subjectUri] && nodeKeys[objectUri]) {
-          const propertyLabel = parsedOntology.properties[predicateUri]?.label || predicateUri.split('/').pop() || predicateUri;
-          lines.push({ from: nodeKeys[subjectUri], to: nodeKeys[objectUri], label: propertyLabel });
+          const propertyLabel =
+            parsedOntology.properties[predicateUri]?.label ||
+            predicateUri.split("/").pop() ||
+            predicateUri;
+          lines.push({
+            from: nodeKeys[subjectUri],
+            to: nodeKeys[objectUri],
+            label: propertyLabel,
+          });
         }
       });
-    
+
       return new sap.ui.model.json.JSONModel({
         nodes: nodes,
         lines: lines,
-        groups: groups
+        groups: groups,
       });
     }
-    
+
     // --- Example Usage ---
     const exampleSqlSelectQuery = `
     WITH TABLE_KG AS (
@@ -609,13 +677,13 @@ SELECT *
 FROM SPARQL_TABLE('
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
+prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>
 prefix owl: <http://www.w3.org/2002/07/owl#>
 prefix foaf: <http://xmlns.com/foaf/0.1/>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?partner ?pbcOrderNumber
-FROM <http://www.semanticweb.org/ontologies/2025/advisory-rdf-test>
-FROM <http://www.semanticweb.org/ontologies/2025/advisory-inferred-triples-v4>
+FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf-v4>
+FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-inferred-triples-v4>
 WHERE {
 ?partner a :SAPPartner .
 ?partner :requested ?serviceRequest .
@@ -634,13 +702,13 @@ FROM TABLE_KG
     // FROM SPARQL_TABLE('
     // prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     // prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    // prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
+    // prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>
     // prefix owl: <http://www.w3.org/2002/07/owl#>
     // prefix foaf: <http://xmlns.com/foaf/0.1/>
     // prefix xsd: <http://www.w3.org/2001/XMLSchema#>
     // SELECT ?pbcOrderNumber ?sapEmployee
-    // FROM <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
-    // FROM <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
+    // FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf-v4>
+    // FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-inferred-triples-v4>
     // WHERE {
     // ?serviceRequest a :SAPServiceRequest;
     // :hasUseCase ?useCase;
@@ -659,13 +727,13 @@ FROM TABLE_KG
     // "TABLE_KG".*
     // FROM TABLE_KG
     // `;
-    
+
     const completeOntologyTTL = `@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
     @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
     @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
     @prefix owl: <http://www.w3.org/2002/07/owl#>.
     @prefix foaf: <http://xmlns.com/foaf/0.1/>.
-    @prefix : <http://www.semanticweb.org/ontologies/2025/advisory-rdf-test/>.
+    @prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>.
     
     :SAPPartner :accountName xsd:string .
     :UseCase :aiScenarioType :SAPAIScenario .
@@ -841,7 +909,8 @@ FROM TABLE_KG
     return BaseController.extend("chat.controller.App", {
       dKeyPressCount: 0,
       handleKeyDown: function (event) {
-        if (event.key.toLowerCase() === 'd') { // Case-insensitive check
+        if (event.key.toLowerCase() === "d") {
+          // Case-insensitive check
           this.dKeyPressCount++;
 
           if (this.dKeyPressCount === 5) {
@@ -849,10 +918,22 @@ FROM TABLE_KG
             console.log("D key pressed 5 times!");
             // alert("You pressed 'd' 5 times!");
             // this.myCustomFunction(); // Call a controller function
-            let isVisible = sap.ui.getCore().byId("container-chat---App--jouleBtn").getVisible();
-            sap.ui.getCore().byId("container-chat---App--jouleBtn").setVisible(!isVisible);
-            let isWelcomeVisible = sap.ui.getCore().byId("container-chat---App--FPage1Welcome--jouleWelcomeBtn").getVisible();
-            sap.ui.getCore().byId("container-chat---App--FPage1Welcome--jouleWelcomeBtn").setVisible(!isWelcomeVisible);
+            let isVisible = sap.ui
+              .getCore()
+              .byId("container-chat---App--jouleBtn")
+              .getVisible();
+            sap.ui
+              .getCore()
+              .byId("container-chat---App--jouleBtn")
+              .setVisible(!isVisible);
+            let isWelcomeVisible = sap.ui
+              .getCore()
+              .byId("container-chat---App--FPage1Welcome--jouleWelcomeBtn")
+              .getVisible();
+            sap.ui
+              .getCore()
+              .byId("container-chat---App--FPage1Welcome--jouleWelcomeBtn")
+              .setVisible(!isWelcomeVisible);
 
             this.dKeyPressCount = 0; // Reset counter (optional)
 
@@ -864,7 +945,9 @@ FROM TABLE_KG
         }
       },
       onJoule: function () {
-        if (document.getElementById("cai-webclient-main").style.display == "block") {
+        if (
+          document.getElementById("cai-webclient-main").style.display == "block"
+        ) {
           document.getElementById("cai-webclient-main").style.display = "none";
         } else {
           document.getElementById("cai-webclient-main").style.display = "block";
@@ -878,12 +961,14 @@ FROM TABLE_KG
          */
 
         var oModel = this.getView().getModel("search");
-        var gridlistitemcontextdata = oModel.getProperty(oEvent.getSource().oBindingContexts.search.sPath);
+        var gridlistitemcontextdata = oModel.getProperty(
+          oEvent.getSource().oBindingContexts.search.sPath
+        );
         // console.log(gridlistitemcontextdata);
         var projID = gridlistitemcontextdata.project_number;
 
-        const getprojdeturl = PROJECT_DETAILS_EP + '?project_number=' + projID;
-        const getprojdetoptions = { method: 'GET' };
+        const getprojdeturl = PROJECT_DETAILS_EP + "?project_number=" + projID;
+        const getprojdetoptions = { method: "GET" };
 
         try {
           const response = await fetch(getprojdeturl, getprojdetoptions);
@@ -896,7 +981,6 @@ FROM TABLE_KG
           const comment_date = data.project_details[0].comment_date;
           const project_date = data.project_details[0].project_date;
           const solution = data.project_details[0].solution;
-
 
           const elements1 = [
             { label: "Request Date", value: project_date },
@@ -919,13 +1003,11 @@ FROM TABLE_KG
 
           var oModel = this.getView().getModel("pages");
           this.openQuickView(oEvent, oModel);
-
         } catch (error) {
           console.error("In onGridListItemPressForProjectDetails:");
           console.error(error);
           MessageToast.show("Uh-oh, unable to retrieve project details.");
         }
-
       },
       expandSparqlqueryTextArea: function () {
         var oPanel = this.byId("FPage7EnhancedAdvisoryBuddy--expandablePanel");
@@ -944,19 +1026,31 @@ FROM TABLE_KG
 
         // You can perform additional actions based on the switch state
         if (bState) {
-          var oPanel = this.byId("FPage7EnhancedAdvisoryBuddy--expandablePanel");
+          var oPanel = this.byId(
+            "FPage7EnhancedAdvisoryBuddy--expandablePanel"
+          );
           oPanel.setExpanded(false);
 
           // Actions when switch is turned ON
-          MessageToast.show("Regenerating SPARQL query, table will be refreshed!");
+          MessageToast.show(
+            "Regenerating SPARQL query, table will be refreshed!"
+          );
 
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").setEditable(false);
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setBusy(true);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+            .setEditable(false);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+            .setBusy(true);
 
-          var newSparqlValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").getValue();
+          var newSparqlValue = this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+            .getValue();
 
-          var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
-          var sKGSemanticsSQLUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw?query_type=sql";
+          var sUrl =
+            "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
+          var sKGSemanticsSQLUrl =
+            "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw?query_type=sql";
 
           var that = this;
 
@@ -965,73 +1059,129 @@ FROM TABLE_KG
             $.ajax({
               url: sUrl,
               type: "POST",
-              contentType: "text/plain",  // Set content type to text/plain for the SPARQL query
-              data: newSparqlValue,               // Send the query as plain text
+              contentType: "text/plain", // Set content type to text/plain for the SPARQL query
+              data: newSparqlValue, // Send the query as plain text
               success: function (oData) {
                 that.processResponse(oData);
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setBusy(false);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+                  .setBusy(false);
               },
               error: function (oError) {
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setBusy(false);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+                  .setBusy(false);
                 MessageToast.show("Error loading data: " + oError.statusText);
                 console.error("Error loading data:", oError);
-              }
+              },
             });
-  
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2").setStatus("Success");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("3").setStatus("Success");
 
-            const networkGraphModel = generateNetworkGraphModelFromSparql(newSparqlValue, completeOntologyTTL);
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2")
+              .setStatus("Success");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("3")
+              .setStatus("Success");
+
+            const networkGraphModel = generateNetworkGraphModelFromSparql(
+              newSparqlValue,
+              completeOntologyTTL
+            );
             this.getView().setModel(networkGraphModel, "kgresults");
-
           } else {
             //  KG + Semantics
             $.ajax({
               url: sKGSemanticsSQLUrl,
               type: "POST",
-              contentType: "text/plain",  // Set content type to text/plain for the SPARQL query
-              data: newSparqlValue,               // Send the query as plain text
+              contentType: "text/plain", // Set content type to text/plain for the SPARQL query
+              data: newSparqlValue, // Send the query as plain text
               success: function (oData) {
                 that.processNewResponse(oData);
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setBusy(false);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+                  .setBusy(false);
               },
               error: function (oError) {
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setBusy(false);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+                  .setBusy(false);
                 MessageToast.show("Error loading data: " + oError.statusText);
                 console.error("Error loading data:", oError);
-              }
+              },
             });
 
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2").setStatus("Success");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2a").setStatus("Success");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2b").setStatus("Success");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("3").setStatus("Success");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2")
+              .setStatus("Success");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2a")
+              .setStatus("Success");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2b")
+              .setStatus("Success");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("3")
+              .setStatus("Success");
 
-            const networkGraphModel = generateNetworkGraphModel(newSparqlValue, completeOntologyTTL);
+            const networkGraphModel = generateNetworkGraphModel(
+              newSparqlValue,
+              completeOntologyTTL
+            );
             this.getView().setModel(networkGraphModel, "kgresults");
-
           }
         } else {
           if (method === "2") {
             //  KG only
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2").setStatus("Warning");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("3").setStatus("Warning");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2")
+              .setStatus("Warning");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("3")
+              .setStatus("Warning");
           } else {
             //  KG + Semantics
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2").setStatus("Warning");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2a").setStatus("Warning");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2b").setStatus("Warning");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("3").setStatus("Warning");
-            this.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setBusy(false);
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2")
+              .setStatus("Warning");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2a")
+              .setStatus("Warning");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("2b")
+              .setStatus("Warning");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+              .getNodeByKey("3")
+              .setStatus("Warning");
+            this.getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+              .setBusy(false);
           }
           // Actions when switch is turned OFF
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").setEditable(true);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+            .setEditable(true);
           MessageToast.show("You're in EDIT mode of the SPARQL query.");
 
-          var oPanel = this.byId("FPage7EnhancedAdvisoryBuddy--expandablePanel");
+          var oPanel = this.byId(
+            "FPage7EnhancedAdvisoryBuddy--expandablePanel"
+          );
           oPanel.setExpanded(true);
-          
-
         }
       },
       onExecuteSparqlExplorer: function (evt) {
@@ -1045,29 +1195,36 @@ FROM TABLE_KG
         // You can perform additional actions based on the switch state
         // MessageToast.show("Regenerating SPARQL query, table will be refreshed!");
 
-        this.getView().byId("FPage8SparqlExplorer--sparqlExplorerResultsTable").setBusy(true);
+        this.getView()
+          .byId("FPage8SparqlExplorer--sparqlExplorerResultsTable")
+          .setBusy(true);
         this.setAppBusy(true);
 
         var oModel = new JSONModel({
           results: [],
           columns: [],
           sparqlQuery: "",
-          ontology: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test",
-          dataSource: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test"
+          ontology:
+            "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology",
+          dataSource:
+            "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf3",
         });
         this.getView().setModel(oModel, "kgSparqlExplorerTable");
 
-        var newSparqlValue = this.getView().byId("FPage8SparqlExplorer--generatedSparqlQueryForSparlExplorer").getValue();
+        var newSparqlValue = this.getView()
+          .byId("FPage8SparqlExplorer--generatedSparqlQueryForSparlExplorer")
+          .getValue();
 
-        var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
+        var sUrl =
+          "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
 
         var that = this;
 
         $.ajax({
           url: sUrl,
           type: "POST",
-          contentType: "text/plain",  // Set content type to text/plain for the SPARQL query
-          data: newSparqlValue,               // Send the query as plain text
+          contentType: "text/plain", // Set content type to text/plain for the SPARQL query
+          data: newSparqlValue, // Send the query as plain text
           success: function (oData) {
             // Method 1: Format data and fit into defined table
             // var aFormattedData = that.formatResponseData(oData);
@@ -1081,38 +1238,56 @@ FROM TABLE_KG
             //   columns: []
             // });
 
-
             that.processResponseForSparqlExplorer(oData);
-            that.getView().byId("FPage8SparqlExplorer--sparqlExplorerResultsTable").setBusy(false);
-            that.getView().byId("FPage8SparqlExplorer--sparqlExplorerResultsTable").setVisible(true);
-            that.getView().byId("FPage8SparqlExplorer--outputIconTabBarForSparlExplorer").setVisible(true);
-            var oPanel = that.byId("FPage8SparqlExplorer--expandablePanelForExplorer");
+            that
+              .getView()
+              .byId("FPage8SparqlExplorer--sparqlExplorerResultsTable")
+              .setBusy(false);
+            that
+              .getView()
+              .byId("FPage8SparqlExplorer--sparqlExplorerResultsTable")
+              .setVisible(true);
+            that
+              .getView()
+              .byId("FPage8SparqlExplorer--outputIconTabBarForSparlExplorer")
+              .setVisible(true);
+            var oPanel = that.byId(
+              "FPage8SparqlExplorer--expandablePanelForExplorer"
+            );
             oPanel.setExpanded(false);
             that.setAppBusy(false);
-
-
           },
           error: function (oError) {
-            that.getView().byId("FPage8SparqlExplorer--sparqlExplorerResultsTable").setBusy(false);
+            that
+              .getView()
+              .byId("FPage8SparqlExplorer--sparqlExplorerResultsTable")
+              .setBusy(false);
             that.setAppBusy(false);
             MessageToast.show("Error loading data: " + oError.statusText);
             console.error("Error loading data:", oError);
-          }
+          },
         });
-
       },
 
       onRefreshKGNaturalLanguage2Sparql: function () {
         var method = this.getView().byId("methodSelect").getSelectedKey();
         if (method === "2") {
           //  KG only
-          var stripValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader").getText();
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInput").setValue(stripValue);
+          var stripValue = this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader")
+            .getText();
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlInput")
+            .setValue(stripValue);
           this.onKGNaturalLanguage2Sparql();
         } else {
           //  KG + Semantics
-          var stripValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader").getText();
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput").setValue(stripValue);
+          var stripValue = this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader")
+            .getText();
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput")
+            .setValue(stripValue);
           this.onKGSemantics2Sparql();
         }
       },
@@ -1122,43 +1297,125 @@ FROM TABLE_KG
         console.log("Method changed to: " + method);
         if (method === "2") {
           //  KG only
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput").setVisible(false);
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInput").setVisible(true);
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly").setEnabled(true);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput")
+            .setVisible(false);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlInput")
+            .setVisible(true);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly")
+            .setEnabled(true);
 
           var oModel = new sap.ui.model.json.JSONModel({
             nodes: [
-              { key: "1", title: "Step 1: Ask Me Anything", icon: "sap-icon://headset", status: "Warning", shape: "Circle" },
-              { key: "1a", title: "Step 2: Generate SPARQL query from user's entry", icon: "", status: "Warning", shape: "Box" },
-              { key: "2", title: "Retrieve data using Knowledge Graph engine", icon: "sap-icon://instance", status: "Warning", shape: "Circle", group: "1" },
-              { key: "3", title: "Step 4: Display and explore Knowledge Graph data & ontology", icon: "sap-icon://accept", status: "Warning", shape: "Circle" },
-              
+              {
+                key: "1",
+                title: "Step 1: Ask Me Anything",
+                icon: "sap-icon://headset",
+                status: "Warning",
+                shape: "Circle",
+              },
+              {
+                key: "1a",
+                title: "Step 2: Generate SPARQL query from user's entry",
+                icon: "",
+                status: "Warning",
+                shape: "Box",
+              },
+              {
+                key: "2",
+                title: "Retrieve data using Knowledge Graph engine",
+                icon: "sap-icon://instance",
+                status: "Warning",
+                shape: "Circle",
+                group: "1",
+              },
+              {
+                key: "3",
+                title:
+                  "Step 4: Display and explore Knowledge Graph data & ontology",
+                icon: "sap-icon://accept",
+                status: "Warning",
+                shape: "Circle",
+              },
             ],
             lines: [
               { from: "1", to: "1a" },
               { from: "1a", to: "2" },
-              { from: "2", to: "3" }
+              { from: "2", to: "3" },
             ],
-            groups: [{ key: "1", title: "Step 3: Use SAP Knowledge Graph engine" },] // Initialize groups array
+            groups: [
+              { key: "1", title: "Step 3: Use SAP Knowledge Graph engine" },
+            ], // Initialize groups array
           });
-  
+
           this.getView().setModel(oModel, "processflow");
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").setCurrentZoomLevel(0.8);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+            .setCurrentZoomLevel(0.8);
         } else {
           //  KG + Semantics
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput").setVisible(true);
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInput").setVisible(false);
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly").setEnabled(true);
-          
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput")
+            .setVisible(true);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--nlInput")
+            .setVisible(false);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly")
+            .setEnabled(true);
+
           var oModel = new sap.ui.model.json.JSONModel({
             nodes: [
-              { key: "1", title: "Step 1: Ask Me Anything", icon: "sap-icon://headset", status: "Warning", shape: "Circle" },
-              { key: "1a", title: "Step 2: Generate SPARQL query from user's entry", icon: "", status: "Warning", shape: "Box" },
-              { key: "2", group: "1", title: "Retrieve data using Knowledge Graph engine", icon: "sap-icon://instance", status: "Warning", shape: "Circle", group: "1" },
-              { key: "2a", group: "1", title: "Vectorize user's entry", icon: "sap-icon://instance", status: "Warning", shape: "Circle" },
-              { key: "2b", group: "1", title: "Execute similarity search with in-database embeddings", icon: "sap-icon://instance", status: "Warning", shape: "Circle", group: "1" },
-              { key: "3", title: "Step 4: Display and explore Knowledge Graph data & ontology", icon: "sap-icon://accept", status: "Warning", shape: "Circle" },
-              
+              {
+                key: "1",
+                title: "Step 1: Ask Me Anything",
+                icon: "sap-icon://headset",
+                status: "Warning",
+                shape: "Circle",
+              },
+              {
+                key: "1a",
+                title: "Step 2: Generate SPARQL query from user's entry",
+                icon: "",
+                status: "Warning",
+                shape: "Box",
+              },
+              {
+                key: "2",
+                group: "1",
+                title: "Retrieve data using Knowledge Graph engine",
+                icon: "sap-icon://instance",
+                status: "Warning",
+                shape: "Circle",
+                group: "1",
+              },
+              {
+                key: "2a",
+                group: "1",
+                title: "Vectorize user's entry",
+                icon: "sap-icon://instance",
+                status: "Warning",
+                shape: "Circle",
+              },
+              {
+                key: "2b",
+                group: "1",
+                title: "Execute similarity search with in-database embeddings",
+                icon: "sap-icon://instance",
+                status: "Warning",
+                shape: "Circle",
+                group: "1",
+              },
+              {
+                key: "3",
+                title:
+                  "Step 4: Display and explore Knowledge Graph data & ontology",
+                icon: "sap-icon://accept",
+                status: "Warning",
+                shape: "Circle",
+              },
             ],
             lines: [
               { from: "1", to: "1a" },
@@ -1166,16 +1423,16 @@ FROM TABLE_KG
               { from: "1a", to: "2a" },
               { from: "2a", to: "2b" },
               { from: "2", to: "3" },
-              { from: "2b", to: "3" }
+              { from: "2b", to: "3" },
             ],
-            groups: [{ key: "1", title: "Step 3: Use SAP HANA Cloud" },] // Initialize groups array
+            groups: [{ key: "1", title: "Step 3: Use SAP HANA Cloud" }], // Initialize groups array
           });
           this.getView().setModel(oModel, "processflow");
 
-          this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").setCurrentZoomLevel(0.6);
+          this.getView()
+            .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+            .setCurrentZoomLevel(0.6);
         }
-
-
       },
 
       onKGSemantics2Sparql: async function (evt) {
@@ -1185,30 +1442,40 @@ FROM TABLE_KG
           results: [],
           columns: [],
           sparqlQuery: "",
-          ontology: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test",
-          dataSource: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test"
+          ontology:
+            "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology",
+          dataSource:
+            "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf3",
         });
         this.getView().setModel(oModel, "kgSparqlTable");
 
         var that = this;
-        var sTranslateSqlUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/translate_nl_to_new";
-        var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.comexecute_query_raw?query_type=sql";
+        var sTranslateSqlUrl =
+          "https://kgwebinar.cfapps.ap10.hana.ondemand.com/translate_nl_to_new";
+        var sUrl =
+          "https://kgwebinar.cfapps.ap10.hana.ondemand.comexecute_query_raw?query_type=sql";
 
-        const rawnlValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput").getValue();
-        const searchValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").getValue();
+        const rawnlValue = this.getView()
+          .byId("FPage7EnhancedAdvisoryBuddy--nlKGSemanticsInput")
+          .getValue();
+        const searchValue = this.getView()
+          .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+          .getValue();
 
         console.log(searchValue);
-        const nlValue = rawnlValue.replace(/\r\n|\r|\n/g, '');
+        const nlValue = rawnlValue.replace(/\r\n|\r|\n/g, "");
         console.log(nlValue);
 
         // this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInput").setValue(nlValue);
-        this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader").setText(nlValue);
+        this.getView()
+          .byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader")
+          .setText(nlValue);
 
         var oPayload = {
-          nl_query: nlValue
+          nl_query: nlValue,
         };
 
-        console.log(oPayload)
+        console.log(oPayload);
 
         $.ajax({
           url: sTranslateSqlUrl,
@@ -1221,52 +1488,107 @@ FROM TABLE_KG
               var sRawSqlQuery = oTranslateData.final_query;
 
               // Split the query into lines
-              var aLines = sRawSqlQuery.split('\n');
+              var aLines = sRawSqlQuery.split("\n");
 
               // Trim whitespace from each line and filter out empty lines
-              var aFormattedLines = aLines.map(function (line) {
-                return line.trim();
-              }).filter(function (line) {
-                return line !== '';
-              });
+              var aFormattedLines = aLines
+                .map(function (line) {
+                  return line.trim();
+                })
+                .filter(function (line) {
+                  return line !== "";
+                });
 
               // Join the formatted lines back into a single string
-              var sFormattedSqlQuery = aFormattedLines.join('\n');
+              var sFormattedSqlQuery = aFormattedLines.join("\n");
               console.log("SQL Query:", sFormattedSqlQuery);
 
               // Update model with processed query
               oModel.setProperty("/sparqlQuery", sFormattedSqlQuery);
 
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").setValue(sFormattedSqlQuery);
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+                .setValue(sFormattedSqlQuery);
 
-              const networkGraphModel = generateNetworkGraphModel(sFormattedSqlQuery, completeOntologyTTL);
+              const networkGraphModel = generateNetworkGraphModel(
+                sFormattedSqlQuery,
+                completeOntologyTTL
+              );
               that.getView().setModel(networkGraphModel, "kgresults");
 
-              var oPanel = that.byId("FPage7EnhancedAdvisoryBuddy--expandablePanel");
+              var oPanel = that.byId(
+                "FPage7EnhancedAdvisoryBuddy--expandablePanel"
+              );
               oPanel.setExpanded(false);
 
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("1").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("1a").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2a").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2b").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("3").setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("1")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("1a")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("2")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("2a")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("2b")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("3")
+                .setStatus("Success");
 
               $.ajax({
                 url: sUrl,
                 type: "POST",
                 contentType: "text/plain", // Set content type to text/plain for the SQL query
-                data: sFormattedSqlQuery,             // Send the SQL query as plain text
+                data: sFormattedSqlQuery, // Send the SQL query as plain text
                 success: function (oData) {
                   that.processNewResponse(oData);
 
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--infoExperimental").close();
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--outputIconTabBar").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--expandablePanel").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly").setEnabled(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--graphViewKGResults").setNoData(false);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--infoExperimental")
+                    .close();
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--outputIconTabBar")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--expandablePanel")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly")
+                    .setEnabled(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--graphViewKGResults")
+                    .setNoData(false);
 
                   that.setAppBusy(false);
                 },
@@ -1274,16 +1596,23 @@ FROM TABLE_KG
                   that.setAppBusy(false);
                   MessageToast.show("Error loading data: " + oError.statusText);
                   console.error("Error loading data:", oError);
-                }
+                },
               });
 
               // that.handleExecuteSqlQuery(sSqlQuery); // Call the function to execute the retrieved SQL query
             } else if (oTranslateData && oTranslateData.error) {
-              MessageToast.show("Error in SQL translation: " + oTranslateData.error);
+              MessageToast.show(
+                "Error in SQL translation: " + oTranslateData.error
+              );
               console.error("Error in SQL translation:", oTranslateData.error);
             } else {
-              MessageToast.show("Invalid response format from SQL translation service.");
-              console.error("Invalid response format from SQL translation service:", oTranslateData);
+              MessageToast.show(
+                "Invalid response format from SQL translation service."
+              );
+              console.error(
+                "Invalid response format from SQL translation service:",
+                oTranslateData
+              );
             }
           },
           error: function (oError) {
@@ -1296,17 +1625,19 @@ FROM TABLE_KG
               var sRawSqlQuery = oError.responseJSON.final_query;
 
               // Split the query into lines
-              var aLines = sRawSqlQuery.split('\n');
+              var aLines = sRawSqlQuery.split("\n");
 
               // Trim whitespace from each line and filter out empty lines
-              var aFormattedLines = aLines.map(function (line) {
-                return line.trim();
-              }).filter(function (line) {
-                return line !== '';
-              });
+              var aFormattedLines = aLines
+                .map(function (line) {
+                  return line.trim();
+                })
+                .filter(function (line) {
+                  return line !== "";
+                });
 
               // Join the formatted lines back into a single string
-              var sFormattedSqlQuery = aFormattedLines.join('\n');
+              var sFormattedSqlQuery = aFormattedLines.join("\n");
 
               // console.log("Formatted SQL Query:", sFormattedSqlQuery);
               // console.log("SQL Query:", sSqlQuery);
@@ -1314,35 +1645,85 @@ FROM TABLE_KG
               // Update model with processed query
               oModel.setProperty("/sparqlQuery", sFormattedSqlQuery);
 
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").setValue(sFormattedSqlQuery);
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+                .setValue(sFormattedSqlQuery);
 
-              const networkGraphModel = generateNetworkGraphModel(sFormattedSqlQuery, completeOntologyTTL);
+              const networkGraphModel = generateNetworkGraphModel(
+                sFormattedSqlQuery,
+                completeOntologyTTL
+              );
               that.getView().setModel(networkGraphModel, "kgresults");
 
-              var oPanel = that.byId("FPage7EnhancedAdvisoryBuddy--expandablePanel");
+              var oPanel = that.byId(
+                "FPage7EnhancedAdvisoryBuddy--expandablePanel"
+              );
               oPanel.setExpanded(false);
 
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("1").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("1a").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2a").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2b").setStatus("Success");
-              that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("3").setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("1")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("1a")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("2")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("2a")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("2b")
+                .setStatus("Success");
+              that
+                .getView()
+                .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                .getNodeByKey("3")
+                .setStatus("Success");
 
               $.ajax({
                 url: sUrl,
                 type: "POST",
                 contentType: "text/plain", // Set content type to text/plain for the SQL query
-                data: sFormattedSqlQuery,             // Send the SQL query as plain text
+                data: sFormattedSqlQuery, // Send the SQL query as plain text
                 success: function (oData) {
                   that.processNewResponse(oData);
 
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--outputIconTabBar").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--expandablePanel").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setVisible(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly").setEnabled(true);
-                  that.getView().byId("FPage7EnhancedAdvisoryBuddy--graphViewKGResults").setNoData(false);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--outputIconTabBar")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--expandablePanel")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+                    .setVisible(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--refreshSparqlQueryOnly")
+                    .setEnabled(true);
+                  that
+                    .getView()
+                    .byId("FPage7EnhancedAdvisoryBuddy--graphViewKGResults")
+                    .setNoData(false);
 
                   that.setAppBusy(false);
                 },
@@ -1351,16 +1732,15 @@ FROM TABLE_KG
                   MessageToast.show("Error loading data: " + oError.statusText);
                   console.error("Error loading data:", oError);
                   console.error("Error loading data:", oError.responseJSON);
-                  console.error("Error loading data:", oError.responseJSON.final_query);
-                }
+                  console.error(
+                    "Error loading data:",
+                    oError.responseJSON.final_query
+                  );
+                },
               });
-
             }
-          }
+          },
         });
-
-
-
       },
 
       processNewResponse: function (oResponse) {
@@ -1397,7 +1777,7 @@ FROM TABLE_KG
               if (oItem.hasOwnProperty(key)) {
                 oRow[key] = {
                   value: oItem[key],
-                  type: typeof oItem[key] // You can refine the type detection if needed
+                  type: typeof oItem[key], // You can refine the type detection if needed
                 };
               }
             }
@@ -1415,23 +1795,30 @@ FROM TABLE_KG
           results: [],
           columns: [],
           sparqlQuery: "",
-          ontology: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test",
-          dataSource: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test"
+          ontology:
+            "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology",
+          dataSource:
+            "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf3",
         });
         this.getView().setModel(oModel, "kgSparqlTable");
 
         // const rawnlValue = evt.getParameter("value");
-        const rawnlValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInput").getValue();
-        const searchValue = this.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").getValue();
+        const rawnlValue = this.getView()
+          .byId("FPage7EnhancedAdvisoryBuddy--nlInput")
+          .getValue();
+        const searchValue = this.getView()
+          .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+          .getValue();
 
         // console.log(searchValue);
-        const nlValue = rawnlValue.replace(/\r\n|\r|\n/g, '');
+        const nlValue = rawnlValue.replace(/\r\n|\r|\n/g, "");
         // console.log(nlValue);
 
         // this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInput").setValue(nlValue);
-        this.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader").setText(nlValue);
+        this.getView()
+          .byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader")
+          .setText(nlValue);
         // this.getView().byId("FPage7EnhancedAdvisoryBuddy--titleForGeneratedSparqlQuery").setText("" + nlValue);
-
 
         // var self = this;
         // /** [TO IMPROVE: if change of fragment ID can lead to problems] */
@@ -1460,14 +1847,16 @@ FROM TABLE_KG
         // }
 
         var that = this;
-        var sUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
+        var sUrl =
+          "https://kgwebinar.cfapps.ap10.hana.ondemand.com/execute_query_raw";
 
-        var sTranslateUrl = "https://kgwebinar.cfapps.ap10.hana.ondemand.com/translate_nl_to_sparql";
+        var sTranslateUrl =
+          "https://kgwebinar.cfapps.ap10.hana.ondemand.com/translate_nl_to_sparql";
         var oModel = this.getView().getModel("kgSparqlTable");
 
         var oPayload = {
           nl_query: rawnlValue,
-          ontology: oModel.getProperty("/ontology")
+          ontology: oModel.getProperty("/ontology"),
         };
         // this.getView().setModel(oModel, "kgSparqlTable");
 
@@ -1479,15 +1868,25 @@ FROM TABLE_KG
           data: JSON.stringify(oPayload),
           success: function (oSQData) {
             // Process the SPARQL query from response
-            var sProcessedQuery = that.processSparqlResponse(oSQData, oModel.getProperty("/ontology"), oModel.getProperty("/dataSource"));
+            var sProcessedQuery = that.processSparqlResponse(
+              oSQData,
+              oModel.getProperty("/ontology"),
+              oModel.getProperty("/dataSource")
+            );
             console.log(sProcessedQuery);
-            localStorage.setItem('ontology-sparql', sProcessedQuery);
-            that.getView().byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery").setValue(sProcessedQuery);
+            localStorage.setItem("ontology-sparql", sProcessedQuery);
+            that
+              .getView()
+              .byId("FPage7EnhancedAdvisoryBuddy--generatedSparqlQuery")
+              .setValue(sProcessedQuery);
 
             // Update model with processed query
             oModel.setProperty("/sparqlQuery", sProcessedQuery);
 
-            const networkGraphModel = generateNetworkGraphModelFromSparql(sProcessedQuery, completeOntologyTTL);
+            const networkGraphModel = generateNetworkGraphModelFromSparql(
+              sProcessedQuery,
+              completeOntologyTTL
+            );
             that.getView().setModel(networkGraphModel, "kgresults");
 
             // MessageToast.show("Query translated successfully");
@@ -1495,8 +1894,8 @@ FROM TABLE_KG
             $.ajax({
               url: sUrl,
               type: "POST",
-              contentType: "text/plain",  // Set content type to text/plain for the SPARQL query
-              data: sProcessedQuery,               // Send the query as plain text
+              contentType: "text/plain", // Set content type to text/plain for the SPARQL query
+              data: sProcessedQuery, // Send the query as plain text
               success: function (oData) {
                 // Method 1: Format data and fit into defined table
                 // var aFormattedData = that.formatResponseData(oData);
@@ -1513,35 +1912,71 @@ FROM TABLE_KG
 
                 that.processResponse(oData);
 
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--infoExperimental").close();
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--outputIconTabBar").setVisible(true);
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader").setVisible(true);
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--expandablePanel").setVisible(true);
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable").setVisible(true);
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--graphViewKGResults").setNoData(false)
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--infoExperimental")
+                  .close();
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--outputIconTabBar")
+                  .setVisible(true);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--nlInputHeader")
+                  .setVisible(true);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--expandablePanel")
+                  .setVisible(true);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--resultsTable")
+                  .setVisible(true);
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--graphViewKGResults")
+                  .setNoData(false);
 
                 that.setAppBusy(false);
 
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("1").setStatus("Success");
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("1a").setStatus("Success");
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("2").setStatus("Success");
-                that.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getNodeByKey("3").setStatus("Success");
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                  .getNodeByKey("1")
+                  .setStatus("Success");
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                  .getNodeByKey("1a")
+                  .setStatus("Success");
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                  .getNodeByKey("2")
+                  .setStatus("Success");
+                that
+                  .getView()
+                  .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+                  .getNodeByKey("3")
+                  .setStatus("Success");
 
-                var oPanel = that.byId("FPage7EnhancedAdvisoryBuddy--expandablePanel");
+                var oPanel = that.byId(
+                  "FPage7EnhancedAdvisoryBuddy--expandablePanel"
+                );
                 oPanel.setExpanded(false);
               },
               error: function (oError) {
                 that.setAppBusy(false);
                 MessageToast.show("Error loading data: " + oError.statusText);
                 console.error("Error loading data:", oError);
-              }
+              },
             });
           },
           error: function (oError) {
             that.setAppBusy(false);
             MessageToast.show("Error translating query: " + oError.statusText);
             console.error("Error translating query:", oError);
-          }
+          },
         });
       },
 
@@ -1618,8 +2053,6 @@ FROM TABLE_KG
         // console.log("explanationText");
         // console.log(explanationText);
 
-
-
         // // Step 2: Replace example.org prefix with the actual ontology URI
         // sSparqlQuery = sSparqlQuery.replace(/<http:\/\/example\.org\/ontology#>/g,
         //   "<" + sOntology + "/>");
@@ -1642,7 +2075,7 @@ FROM TABLE_KG
         //   sSparqlQuery = "prefix owl: <http://www.w3.org/2002/07/owl#>\n" + sSparqlQuery;
         // }
 
-        // sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>\n" + sSparqlQuery;
+        // sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>\n" + sSparqlQuery;
 
         // // Step 5: Add FROM clause if missing
         // if (sDataSource && !sSparqlQuery.includes("FROM")) {
@@ -1665,8 +2098,7 @@ FROM TABLE_KG
         // sSparqlQuery = sSparqlQuery.replace(/WHERE\s*\{[\s\S]*?\}\s*\.$/i, "WHERE {\n$1\n}");
         // sSparqlQuery = sSparqlQuery.replace(/WHERE\s*\{\s*[\s\S]*?\}\.$/i, "WHERE {$1}");
 
-        sSparqlQuery = sSparqlQuery.trimEnd().replace(/\.$/, '');
-
+        sSparqlQuery = sSparqlQuery.trimEnd().replace(/\.$/, "");
 
         console.log("after cleaned");
         console.log(sSparqlQuery);
@@ -1748,8 +2180,6 @@ FROM TABLE_KG
       //   console.log("explanationText");
       //   console.log(explanationText);
 
-
-
       //   // Step 2: Replace example.org prefix with the actual ontology URI
       //   sSparqlQuery = sSparqlQuery.replace(/<http:\/\/example\.org\/ontology#>/g,
       //     "<" + sOntology + "/>");
@@ -1772,7 +2202,7 @@ FROM TABLE_KG
       //     sSparqlQuery = "prefix owl: <http://www.w3.org/2002/07/owl#>\n" + sSparqlQuery;
       //   }
 
-      //   sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>\n" + sSparqlQuery;
+      //   sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>\n" + sSparqlQuery;
 
       //   // Step 5: Add FROM clause if missing
       //   if (sDataSource && !sSparqlQuery.includes("FROM")) {
@@ -1795,7 +2225,13 @@ FROM TABLE_KG
       // },
 
       processResponse: function (oResponse) {
-        if (!oResponse || !oResponse.head || !oResponse.head.vars || !oResponse.results || !oResponse.results.bindings) {
+        if (
+          !oResponse ||
+          !oResponse.head ||
+          !oResponse.head.vars ||
+          !oResponse.results ||
+          !oResponse.results.bindings
+        ) {
           MessageToast.show("Invalid response format");
           return;
         }
@@ -1806,7 +2242,6 @@ FROM TABLE_KG
 
         // Create formatted data for the table
         var aResults = this.formatResponseData(oResponse);
-
 
         // Update model
         var oModel = this.getView().getModel("kgSparqlTable");
@@ -1830,12 +2265,12 @@ FROM TABLE_KG
               if (oItem[sColumn]) {
                 oRow[sColumn] = {
                   value: oItem[sColumn].value,
-                  type: oItem[sColumn].type
+                  type: oItem[sColumn].type,
                 };
               } else {
                 oRow[sColumn] = {
                   value: "",
-                  type: "unknown"
+                  type: "unknown",
                 };
               }
             });
@@ -1849,7 +2284,9 @@ FROM TABLE_KG
 
       createDynamicTable: function (aColumns) {
         var that = this;
-        var oTable = this.getView().byId("FPage7EnhancedAdvisoryBuddy--resultsTable");
+        var oTable = this.getView().byId(
+          "FPage7EnhancedAdvisoryBuddy--resultsTable"
+        );
 
         // Clear existing columns and template cells
         oTable.removeAllColumns();
@@ -1872,9 +2309,11 @@ FROM TABLE_KG
 
         aColumns.forEach(function (sColumn) {
           // Add column to the table
-          oTable.addColumn(new Column({
-            header: new Text({ text: this.formatColumnHeader(sColumn) })
-          }));
+          oTable.addColumn(
+            new Column({
+              header: new Text({ text: this.formatColumnHeader(sColumn) }),
+            })
+          );
 
           // Add cell to the template with appropriate formatter
           var oText = new Text();
@@ -1884,19 +2323,19 @@ FROM TABLE_KG
             // For partner column (typically contains URIs with partner IDs)
             oText.bindProperty("text", {
               path: "kgSparqlTable>" + sColumn + "/value",
-              formatter: that.formatPartnerId.bind(that)
+              formatter: that.formatPartnerId.bind(that),
             });
           } else if (sColumn === "country") {
             // For country column (typically contains URIs with country codes)
             oText.bindProperty("text", {
               path: "kgSparqlTable>" + sColumn + "/value",
-              formatter: that.formatCountry.bind(that)
+              formatter: that.formatCountry.bind(that),
             });
           } else {
             // For other columns, apply generic formatting based on type
             oText.bindProperty("text", {
               path: "kgSparqlTable>" + sColumn,
-              formatter: that.formatValue.bind(that)
+              formatter: that.formatValue.bind(that),
             });
           }
 
@@ -1906,11 +2345,17 @@ FROM TABLE_KG
         // Re-apply the binding with the new template
         oTable.bindItems({
           path: "kgSparqlTable>/results",
-          template: oTemplate
+          template: oTemplate,
         });
       },
       processResponseForSparqlExplorer: function (oResponse) {
-        if (!oResponse || !oResponse.head || !oResponse.head.vars || !oResponse.results || !oResponse.results.bindings) {
+        if (
+          !oResponse ||
+          !oResponse.head ||
+          !oResponse.head.vars ||
+          !oResponse.results ||
+          !oResponse.results.bindings
+        ) {
           MessageToast.show("Invalid response format");
           return;
         }
@@ -1921,7 +2366,6 @@ FROM TABLE_KG
 
         // Create formatted data for the table
         var aResults = this.formatResponseDataForSparqlExplorer(oResponse);
-
 
         // Update model
         var oModel = this.getView().getModel("kgSparqlExplorerTable");
@@ -1945,12 +2389,12 @@ FROM TABLE_KG
               if (oItem[sColumn]) {
                 oRow[sColumn] = {
                   value: oItem[sColumn].value,
-                  type: oItem[sColumn].type
+                  type: oItem[sColumn].type,
                 };
               } else {
                 oRow[sColumn] = {
                   value: "",
-                  type: "unknown"
+                  type: "unknown",
                 };
               }
             });
@@ -1964,7 +2408,9 @@ FROM TABLE_KG
 
       createDynamicTableForSparqlExplorer: function (aColumns) {
         var that = this;
-        var oTable = this.getView().byId("FPage8SparqlExplorer--sparqlExplorerResultsTable");
+        var oTable = this.getView().byId(
+          "FPage8SparqlExplorer--sparqlExplorerResultsTable"
+        );
 
         // Clear existing columns and template cells
         oTable.removeAllColumns();
@@ -1987,9 +2433,11 @@ FROM TABLE_KG
 
         aColumns.forEach(function (sColumn) {
           // Add column to the table
-          oTable.addColumn(new Column({
-            header: new Text({ text: this.formatColumnHeader(sColumn) })
-          }));
+          oTable.addColumn(
+            new Column({
+              header: new Text({ text: this.formatColumnHeader(sColumn) }),
+            })
+          );
 
           // Add cell to the template with appropriate formatter
           var oText = new Text();
@@ -1999,19 +2447,19 @@ FROM TABLE_KG
             // For partner column (typically contains URIs with partner IDs)
             oText.bindProperty("text", {
               path: "kgSparqlExplorerTable>" + sColumn + "/value",
-              formatter: that.formatPartnerId.bind(that)
+              formatter: that.formatPartnerId.bind(that),
             });
           } else if (sColumn === "country") {
             // For country column (typically contains URIs with country codes)
             oText.bindProperty("text", {
               path: "kgSparqlExplorerTable>" + sColumn + "/value",
-              formatter: that.formatCountry.bind(that)
+              formatter: that.formatCountry.bind(that),
             });
           } else {
             // For other columns, apply generic formatting based on type
             oText.bindProperty("text", {
               path: "kgSparqlExplorerTable>" + sColumn,
-              formatter: that.formatValue.bind(that)
+              formatter: that.formatValue.bind(that),
             });
           }
 
@@ -2021,7 +2469,7 @@ FROM TABLE_KG
         // Re-apply the binding with the new template
         oTable.bindItems({
           path: "kgSparqlExplorerTable>/results",
-          template: oTemplate
+          template: oTemplate,
         });
       },
 
@@ -2072,10 +2520,10 @@ FROM TABLE_KG
 
         // Map country codes to full names
         var oCountryMap = {
-          "GE": "Germany",
-          "US": "United States",
-          "UK": "United Kingdom",
-          "FR": "France",
+          GE: "Germany",
+          US: "United States",
+          UK: "United Kingdom",
+          FR: "France",
           // Add more countries as needed
         };
 
@@ -2085,62 +2533,142 @@ FROM TABLE_KG
       onEmbedHANASimilaritySearch: async function (evt) {
         this.setAppBusy(true);
 
-        const searchValue = evt.getParameter("value");
-        const cleanValue = searchValue.replace(/\r\n|\r|\n/g, '');
-
-        var self = this;
-        /** [TO IMPROVE: if change of fragment ID can lead to problems] */
-        // self.getView().byId("FPage2AdvisoryBuddy--gridList").setHeaderText("Top 5 Recommendations: " + cleanValue);
-
-        /** Improvements: for reusability of fragment */
-        var oGridList1 = this.getView().byId(this.createId("FPage2AdvisoryBuddy--gridList"));
-        oGridList1.setHeaderText("Top 5 Recommendations: " + cleanValue);
-
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        const options = {
-          headers: myHeaders,
-          method: 'POST',
-          body: '{"schema_name": "' + HANA_EMB_SEARCH_SCHEMANAME + '", "table_name": "' + HANA_EMB_SEARCH_TABLENAME + '","query_text":"' + cleanValue + '"}'
-        };
-
         try {
-          const response = await fetch(HANA_EMB_SEARCH_EP, options);
+          // 1) Get query text
+          const searchValue = evt.getParameter("value") || "";
+          const cleanValue = searchValue.replace(/\r\n|\r|\n/g, "");
+
+          // 2) Resolve NSMAN ID control robustly (fragment-safe)
+          let nsmanIdInput =
+            this.byId(this.createId && this.createId("nsmanIdInput")) ||
+            this.byId("nsmanIdInput") ||
+            sap.ui.getCore().byId("nsmanIdInput");
+
+          if (!nsmanIdInput && this.getView()?.findAggregatedObjects) {
+            const allControls = this.getView().findAggregatedObjects(true);
+            nsmanIdInput = allControls.find(
+              (c) => c.getPlaceholder && c.getPlaceholder() === "Enter ID"
+            );
+          }
+
+          const nsmanIdRaw = (nsmanIdInput?.getValue?.() || "")
+            .toString()
+            .trim();
+
+          // If IDs are purely numeric, normalize; otherwise keep raw
+          const nsmanIdNum = parseInt(nsmanIdRaw, 10);
+          const hasValidId = nsmanIdRaw !== "" && !isNaN(nsmanIdNum);
+          const idForQuery = hasValidId ? nsmanIdNum : nsmanIdRaw; // support numeric now; swap if alphanumeric allowed
+
+          const finalQuery = hasValidId
+            ? `ID=${idForQuery}. ${cleanValue}`
+            : cleanValue;
+
+          console.log("nsmanIdInput found:", !!nsmanIdInput);
+          console.log("NSMAN ID (raw):", nsmanIdRaw);
+          console.log("Final query for search:", finalQuery);
+
+          // 3) Optional validation (only if we have both query and ID)
+          if (
+            cleanValue &&
+            hasValidId &&
+            typeof validateQuestionWithLLM === "function"
+          ) {
+            console.log("Starting LLM validation for:", cleanValue);
+            const validation = await validateQuestionWithLLM(
+              cleanValue,
+              idForQuery
+            );
+          }
+
+          // 4) Update header now that we're proceeding
+          const oGridList1 = this.getView().byId(
+            this.createId("FPage2AdvisoryBuddy--gridList")
+          );
+          if (oGridList1)
+            oGridList1.setHeaderText("Your Query: " + cleanValue);
+
+          // 5) Call backend
+          const myHeaders = new Headers();
+          myHeaders.append("Content-Type", "application/json");
+
+          const options = {
+            headers: myHeaders,
+            method: "POST",
+            body: JSON.stringify({
+              schema_name: HANA_EMB_SEARCH_SCHEMANAME,
+              table_name: HANA_EMB_SEARCH_TABLENAME,
+              query_text: finalQuery,
+            }),
+          };
+
+          const response = await fetch(
+            HANA_EMB_SEARCH_EP /* or '/hana-emb/compare_text_to_existing' */,
+            options
+          );
           const data = await response.json();
-          this.addResultsToSearchResultsControl(data);
+
+          const similarities = data?.similarities || [];
+
+          // 6) Expand each record into 3 (one per solution)
+          const expanded = similarities.flatMap((it) =>
+            [
+              {
+                NSMAN_ID: it.NSMAN_ID,
+                SIMILARITY: it.SIMILARITY,
+                TEXT: it.SOLUTION,
+                BOOKING_NO: 1,
+              },
+              {
+                NSMAN_ID: it.NSMAN_ID,
+                SIMILARITY: it.SIMILARITY,
+                TEXT: it.SOLUTION_TWO,
+                BOOKING_NO: 2,
+              },
+              {
+                NSMAN_ID: it.NSMAN_ID,
+                SIMILARITY: it.SIMILARITY,
+                TEXT: it.SOLUTION_THREE,
+                BOOKING_NO: 3,
+              },
+            ].filter((e) => e.TEXT)
+          );
+
+          // 7) Bind to the GridList
+          this.getView().setModel(
+            new sap.ui.model.json.JSONModel({ similarities: expanded }),
+            "search"
+          );
+
+          console.log("Expanded similarities:", expanded);
         } catch (error) {
-          console.error("In onEmbedHANASimilaritySearch:");
-          console.error(error);
+          console.error("In onEmbedHANASimilaritySearch:", error);
+          sap.m.MessageToast.show(
+            "Search failed: " + (error?.message || error)
+          );
+        } finally {
+          this.setAppBusy(false);
         }
-
-        this.setAppBusy(false);
-      },
-      onCoinStar: function (oEvent) {
-        var oModel = this.getView().getModel("search");
-        var gridlistitemcontextdata = oModel.getProperty(oEvent.getSource().getParent().oPropagatedProperties.oBindingContexts.search.sPath);
-        // console.log(gridlistitemcontextdata);
-        MessageToast.show("Opening Coinstar of Project #" + gridlistitemcontextdata.project_number);
-        window.open(COINSTAR_URL, "_blank");
-      },
-      onAddFav: function (oEvent) {
-        var oModel = this.getView().getModel("search");
-        var gridlistitemcontextdata = oModel.getProperty(oEvent.getSource().getParent().oPropagatedProperties.oBindingContexts.search.sPath);
-        // console.log(gridlistitemcontextdata);
-        MessageToast.show("Added to favourites of Project #" + gridlistitemcontextdata.project_number);
-      },
-      onCopy: function (oEvent) {
-        var oModel = this.getView().getModel("search");
-        var gridlistitemcontextdata = oModel.getProperty(oEvent.getSource().getParent().oPropagatedProperties.oBindingContexts.search.sPath);
-        console.log(gridlistitemcontextdata);
-        MessageToast.show("Text copied successfully to clipboard.");
-        copyToClipboard(gridlistitemcontextdata.TEXT);
-      },
-      onCall: function (oEvent) {
-        MessageToast.show("Opening MS Teams");
-        openMSTeams(MSTEAMS_URL);
       },
 
+      onBook: function (oEvent) {
+        // Optional: fetch item context if you want to know which was booked
+        const oModel = this.getView().getModel("search");
+        const context = oEvent
+          .getSource()
+          .getParent()
+          .getParent()
+          .getBindingContext("search");
+        const data = context ? context.getObject() : {};
+
+        // Show toast
+        sap.m.MessageToast.show(
+          "You've booked" + (data.TEXT ? ": " + data.TEXT : "!")
+        );
+      },
+      formatBookingTitle: function (index) {
+        return "Booking " + (index + 1);
+      },
       openQuickView: function (oEvent, oModel) {
         var oButton = oEvent.getSource(),
           oView = this.getView();
@@ -2151,7 +2679,7 @@ FROM TABLE_KG
           this._pQuickView = Fragment.load({
             id: oView.getId(),
             name: "chat.view.TAQuickView",
-            controller: this
+            controller: this,
           }).then(function (oQuickView) {
             oView.addDependent(oQuickView);
             return oQuickView;
@@ -2170,54 +2698,70 @@ FROM TABLE_KG
       },
 
       initMockDataForLearningPlanAssignmentDragDrop: function () {
-        this.byId("list1").setModel(new JSONModel([
-          { title: "Multitenancy", rows: 1, columns: 1 },
-          { title: "Business AI", rows: 1, columns: 1 },
-          { title: "Integration Suite", rows: 1, columns: 1 }
-        ]), "grid");
+        this.byId("list1").setModel(
+          new JSONModel([
+            { title: "Multitenancy", rows: 1, columns: 1 },
+            { title: "Business AI", rows: 1, columns: 1 },
+            { title: "Integration Suite", rows: 1, columns: 1 },
+          ]),
+          "grid"
+        );
 
-        this.byId("grid1").setModel(new JSONModel([
-          { title: "CAP", rows: 1, columns: 1 },
-          { title: "SAPUI5", rows: 1, columns: 1 },
-          { title: "Java", rows: 1, columns: 1 }
-        ]), "grid");
+        this.byId("grid1").setModel(
+          new JSONModel([
+            { title: "CAP", rows: 1, columns: 1 },
+            { title: "SAPUI5", rows: 1, columns: 1 },
+            { title: "Java", rows: 1, columns: 1 },
+          ]),
+          "grid"
+        );
       },
 
       attachDragAndDrop: function () {
         var oList = this.byId("list1");
-        oList.addDragDropConfig(new DragInfo({
-          sourceAggregation: "items"
-        }));
+        oList.addDragDropConfig(
+          new DragInfo({
+            sourceAggregation: "items",
+          })
+        );
 
-        oList.addDragDropConfig(new DropInfo({
-          targetAggregation: "items",
-          dropPosition: DropPosition.Between,
-          dropLayout: DropLayout.Vertical,
-          drop: this.onDrop.bind(this)
-        }));
+        oList.addDragDropConfig(
+          new DropInfo({
+            targetAggregation: "items",
+            dropPosition: DropPosition.Between,
+            dropLayout: DropLayout.Vertical,
+            drop: this.onDrop.bind(this),
+          })
+        );
 
         var oGrid = this.byId("grid1");
-        oGrid.addDragDropConfig(new DragInfo({
-          sourceAggregation: "items"
-        }));
+        oGrid.addDragDropConfig(
+          new DragInfo({
+            sourceAggregation: "items",
+          })
+        );
 
-        oGrid.addDragDropConfig(new GridDropInfo({
-          targetAggregation: "items",
-          dropPosition: DropPosition.Between,
-          dropLayout: DropLayout.Horizontal,
-          dropIndicatorSize: this.onDropIndicatorSize.bind(this),
-          drop: this.onDrop.bind(this)
-        }));
+        oGrid.addDragDropConfig(
+          new GridDropInfo({
+            targetAggregation: "items",
+            dropPosition: DropPosition.Between,
+            dropLayout: DropLayout.Horizontal,
+            dropIndicatorSize: this.onDropIndicatorSize.bind(this),
+            drop: this.onDrop.bind(this),
+          })
+        );
       },
 
       onDropIndicatorSize: function (oDraggedControl) {
         var oBindingContext = oDraggedControl.getBindingContext(),
-          oData = oBindingContext.getModel("grid").getProperty(oBindingContext.getPath());
+          oData = oBindingContext
+            .getModel("grid")
+            .getProperty(oBindingContext.getPath());
 
         if (oDraggedControl.isA("sap.m.StandardListItem")) {
           return {
             rows: oData.rows,
-            columns: oData.columns
+            columns: oData.columns,
           };
         }
       },
@@ -2226,15 +2770,12 @@ FROM TABLE_KG
         var oDragged = oInfo.getParameter("draggedControl"),
           oDropped = oInfo.getParameter("droppedControl"),
           sInsertPosition = oInfo.getParameter("dropPosition"),
-
           oDragContainer = oDragged.getParent(),
           oDropContainer = oInfo.getSource().getParent(),
-
           oDragModel = oDragContainer.getModel("grid"),
           oDropModel = oDropContainer.getModel("grid"),
           oDragModelData = oDragModel.getData(),
           oDropModelData = oDropModel.getData(),
-
           iDragPosition = oDragContainer.indexOfItem(oDragged),
           iDropPosition = oDropContainer.indexOfItem(oDropped);
 
@@ -2311,7 +2852,9 @@ FROM TABLE_KG
         }
 
         // var oList = this.byId("idList");
-        var oList = this.getView().byId(this.createId("FPage3KnowledgeBase--idList"));
+        var oList = this.getView().byId(
+          this.createId("FPage3KnowledgeBase--idList")
+        );
         var oBinding = oList.getBinding("items");
         oBinding.filter(aFilters, "Application");
       },
@@ -2327,8 +2870,8 @@ FROM TABLE_KG
         var aContexts = oList.getSelectedContexts(true);
 
         // update UI
-        var bSelected = (aContexts && aContexts.length > 0);
-        var sText = (bSelected) ? aContexts.length + " selected" : null;
+        var bSelected = aContexts && aContexts.length > 0;
+        var sText = bSelected ? aContexts.length + " selected" : null;
         oInfoToolbar.setVisible(bSelected);
         oLabel.setText(sText);
       },
@@ -2336,12 +2879,17 @@ FROM TABLE_KG
       onKBProjectPress: function (oEvent) {
         var oItem = oEvent.getSource();
         var oBindingContext = oItem.getBindingContext();
-        var oModel = this.getView().getModel('projects');
-        var oSettingsModel = this.getView().getModel('settings');
-        oSettingsModel.setProperty("/navigatedItem", oModel.getProperty("project_number", oBindingContext));
+        var oModel = this.getView().getModel("projects");
+        var oSettingsModel = this.getView().getModel("settings");
+        oSettingsModel.setProperty(
+          "/navigatedItem",
+          oModel.getProperty("project_number", oBindingContext)
+        );
 
         // console.log(oItem.oBindingContexts.projects.sPath);
-        var gridlistitemcontextdata = oModel.getProperty(oItem.oBindingContexts.projects.sPath);
+        var gridlistitemcontextdata = oModel.getProperty(
+          oItem.oBindingContexts.projects.sPath
+        );
         var projID = gridlistitemcontextdata.project_number;
         // console.log(projID);
         // MessageToast.show(projID);
@@ -2355,12 +2903,16 @@ FROM TABLE_KG
       onColChartHandleSelectionChange: async function (oEvent) {
         this.getView().byId("FPage5CategoryMgmt--columnCard").setBusy(true);
         var oItem = oEvent.getParameter("selectedItem");
-        const url = ALL_PROJECTS_BY_EXPERT_EP + '?expert=' + oItem.getKey();
+        const url = ALL_PROJECTS_BY_EXPERT_EP + "?expert=" + oItem.getKey();
 
         // var vizFrame = this.getView().byId(this._constants.vizFrame.id);
-        var vizFrame = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame");
+        var vizFrame = sap.ui
+          .getCore()
+          .byId(
+            "container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame"
+          );
 
-        const options = { method: 'GET' };
+        const options = { method: "GET" };
 
         try {
           const response = await fetch(url, options);
@@ -2383,68 +2935,80 @@ FROM TABLE_KG
         vizFrame: {
           id: "chartContainerVizFrame",
           dataset: {
-            dimensions: [{
-              name: 'Category',
-              value: "{CATEGORY}"
-            }],
-            measures: [{
-              group: 1,
-              name: 'Profit',
-              value: '{Revenue2}'
-            }, {
-              group: 1,
-              name: 'Target',
-              value: '{Target}'
-            }, {
-              group: 1,
-              name: "Forcast",
-              value: "{Forcast}"
-            }, {
-              group: 1,
-              name: "No of Projects",
-              value: "{PROJECTS}"
-            },
-            {
-              group: 1,
-              name: 'Revenue2',
-              value: '{Revenue2}'
-            }, {
-              group: 1,
-              name: "Revenue3",
-              value: "{Revenue3}"
-            }],
+            dimensions: [
+              {
+                name: "Category",
+                value: "{CATEGORY}",
+              },
+            ],
+            measures: [
+              {
+                group: 1,
+                name: "Profit",
+                value: "{Revenue2}",
+              },
+              {
+                group: 1,
+                name: "Target",
+                value: "{Target}",
+              },
+              {
+                group: 1,
+                name: "Forcast",
+                value: "{Forcast}",
+              },
+              {
+                group: 1,
+                name: "No of Projects",
+                value: "{PROJECTS}",
+              },
+              {
+                group: 1,
+                name: "Revenue2",
+                value: "{Revenue2}",
+              },
+              {
+                group: 1,
+                name: "Revenue3",
+                value: "{Revenue3}",
+              },
+            ],
             data: {
-              path: "/advisories_by_category"
-            }
+              path: "/advisories_by_category",
+            },
           },
           // modulePath: "/mockdata/ProductsByCategory.json",
           type: "column",
           properties: {
             title: {
               visible: false,
-              text: "Trending Topics by Categories"
+              text: "Trending Topics by Categories",
             },
             legend: {
-              visible: false
+              visible: false,
             },
             plotArea: {
-              showGap: true
+              showGap: true,
             },
           },
-          feedItems: [{
-            'uid': "primaryValues",
-            'type': "Measure",
-            'values': ["No of Projects"]
-          }, {
-            'uid': "axisLabels",
-            'type': "Dimension",
-            'values': ["Category"]
-          }, {
-            'uid': "targetValues",
-            'type': "Measure",
-            'values': ["Target"]
-          }]
-        }
+          feedItems: [
+            {
+              uid: "primaryValues",
+              type: "Measure",
+              values: ["No of Projects"],
+            },
+            {
+              uid: "axisLabels",
+              type: "Dimension",
+              values: ["Category"],
+            },
+            {
+              uid: "targetValues",
+              type: "Measure",
+              values: ["Target"],
+            },
+          ],
+        },
       },
 
       _pieconstants: {
@@ -2452,71 +3016,83 @@ FROM TABLE_KG
         vizFrame: {
           id: "piechartContainerVizFrame",
           dataset: {
-            dimensions: [{
-              name: 'Category',
-              value: "{Category}"
-            }],
-            measures: [{
-              group: 1,
-              name: 'Profit',
-              value: '{Revenue2}'
-            }, {
-              group: 1,
-              name: 'Target',
-              value: '{Target}'
-            }, {
-              group: 1,
-              name: "Forcast",
-              value: "{Forcast}"
-            }, {
-              group: 1,
-              name: "ProjectsCount",
-              value: "{ProjectsCount}"
-            },
-            {
-              group: 1,
-              name: 'Revenue2',
-              value: '{Revenue2}'
-            }, {
-              group: 1,
-              name: "Revenue3",
-              value: "{Revenue3}"
-            }],
+            dimensions: [
+              {
+                name: "Category",
+                value: "{Category}",
+              },
+            ],
+            measures: [
+              {
+                group: 1,
+                name: "Profit",
+                value: "{Revenue2}",
+              },
+              {
+                group: 1,
+                name: "Target",
+                value: "{Target}",
+              },
+              {
+                group: 1,
+                name: "Forcast",
+                value: "{Forcast}",
+              },
+              {
+                group: 1,
+                name: "ProjectsCount",
+                value: "{ProjectsCount}",
+              },
+              {
+                group: 1,
+                name: "Revenue2",
+                value: "{Revenue2}",
+              },
+              {
+                group: 1,
+                name: "Revenue3",
+                value: "{Revenue3}",
+              },
+            ],
             data: {
-              path: "/Categories"
-            }
+              path: "/Categories",
+            },
           },
           // modulePath: "/mockdata/ChartContainerData.json",
           type: "pie",
           properties: {
             legend: {
-              visible: false
+              visible: false,
             },
             title: {
               visible: false,
-              text: "Trending Topics by Categories"
+              text: "Trending Topics by Categories",
             },
             plotArea: {
               showGap: true,
               dataLabel: {
-                visible: true
-              }
-            }
+                visible: true,
+              },
+            },
           },
-          feedItems: [{
-            'uid': "size",
-            'type': "Measure",
-            'values': ["ProjectsCount"]
-          }, {
-            'uid': "color",
-            'type': "Dimension",
-            'values': ["Category"]
-          }, {
-            'uid': "targetValues",
-            'type': "Measure",
-            'values': ["Target"]
-          }]
-        }
+          feedItems: [
+            {
+              uid: "size",
+              type: "Measure",
+              values: ["ProjectsCount"],
+            },
+            {
+              uid: "color",
+              type: "Dimension",
+              values: ["Category"],
+            },
+            {
+              uid: "targetValues",
+              type: "Measure",
+              values: ["Target"],
+            },
+          ],
+        },
       },
 
       onCatMgmtEdit: function () {
@@ -2529,7 +3105,10 @@ FROM TABLE_KG
         // Revert to original data and disable edit mode
         const oModel = this.getView().getModel("categorymgmt");
         const originalData = oModel.getProperty("/originalData");
-        oModel.setProperty("/clusters", JSON.parse(JSON.stringify(originalData))); // Restore original data
+        oModel.setProperty(
+          "/clusters",
+          JSON.parse(JSON.stringify(originalData))
+        ); // Restore original data
         oModel.setProperty("/isEditMode", false);
       },
 
@@ -2554,55 +3133,75 @@ FROM TABLE_KG
         fetch(UPDATE_CATEGORIES_EP, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
         })
           .then((response) => {
             if (response.ok) {
               MessageToast.show("Category data has been updated successfully!");
             } else {
-              throw new Error("Uh-oh, seems like there's some issue with the API call to update.");
+              throw new Error(
+                "Uh-oh, seems like there's some issue with the API call to update."
+              );
             }
             this.setAppBusy(false);
           })
           .catch((error) => {
             console.error("Error updating category data:", error);
-            MessageToast.show("Uh-oh, seems like there's some issue with the API call to update. Please try again.");
+            MessageToast.show(
+              "Uh-oh, seems like there's some issue with the API call to update. Please try again."
+            );
             this.setAppBusy(false);
           });
       },
 
       onCatMgmtAutoRefresh: async function (oEvent) {
         /** [TODO] AUTO REFRESH FEATURE
-        * 3. Project Breakdown Piechart (sapui5): refresh overalls
-        * 4. Project Workload Column Chart (sapui5): refresh overalls with filtered expert
-        * 5. Cat Mgmt Table refresh
-        */
+         * 3. Project Breakdown Piechart (sapui5): refresh overalls
+         * 4. Project Workload Column Chart (sapui5): refresh overalls with filtered expert
+         * 5. Cat Mgmt Table refresh
+         */
         var oState = oEvent.getParameter("state");
 
         if (oState) {
           // localStorage.setItem("AUTO-REFRESH", "true");
 
           // Store the interval ID so you can clear it later
-          if (!this._autoRefreshInterval) { // Check if it's already set
+          if (!this._autoRefreshInterval) {
+            // Check if it's already set
             this._autoRefreshInterval = setInterval(async () => {
               const now = new Date();
               const formattedDateTime = now.toLocaleString();
 
-              this.getView().byId("FPage5CategoryMgmt--pieRefreshLabel").setText("Last refreshed at " + formattedDateTime);
-              this.getView().byId("FPage5CategoryMgmt--colRefreshLabel").setText("Last refreshed at " + formattedDateTime);
-              this.getView().byId("FPage5CategoryMgmt--catTableRefreshLabel").setText("Last refreshed at " + formattedDateTime);
-              this.getView().byId("FPage5CategoryMgmt--columnCard").setBusy(true);
+              this.getView()
+                .byId("FPage5CategoryMgmt--pieRefreshLabel")
+                .setText("Last refreshed at " + formattedDateTime);
+              this.getView()
+                .byId("FPage5CategoryMgmt--colRefreshLabel")
+                .setText("Last refreshed at " + formattedDateTime);
+              this.getView()
+                .byId("FPage5CategoryMgmt--catTableRefreshLabel")
+                .setText("Last refreshed at " + formattedDateTime);
+              this.getView()
+                .byId("FPage5CategoryMgmt--columnCard")
+                .setBusy(true);
               this.getView().byId("FPage5CategoryMgmt--pieCard").setBusy(true);
 
-              const selectedExpert = this.getView().byId("FPage5CategoryMgmt--idoSelect1").getSelectedKey();
-              const url = ALL_PROJECTS_BY_EXPERT_EP + '?expert=' + selectedExpert;
+              const selectedExpert = this.getView()
+                .byId("FPage5CategoryMgmt--idoSelect1")
+                .getSelectedKey();
+              const url =
+                ALL_PROJECTS_BY_EXPERT_EP + "?expert=" + selectedExpert;
               // var vizFrame = this.getView().byId(this._constants.vizFrame.id);
-              var vizFrame = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame");
+              var vizFrame = sap.ui
+                .getCore()
+                .byId(
+                  "container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame"
+                );
 
               try {
-                const options = { method: 'GET' };
+                const options = { method: "GET" };
                 const response = await fetch(url, options);
                 if (!response.ok) {
                   throw new Error(`HTTP error! status: ${response.status}`);
@@ -2611,20 +3210,27 @@ FROM TABLE_KG
                 var oModel = new JSONModel(data);
                 vizFrame.setModel(oModel);
 
-                this.getView().byId("FPage5CategoryMgmt--columnCard").setBusy(false);
-                this.getView().byId("FPage5CategoryMgmt--pieCard").setBusy(false);
+                this.getView()
+                  .byId("FPage5CategoryMgmt--columnCard")
+                  .setBusy(false);
+                this.getView()
+                  .byId("FPage5CategoryMgmt--pieCard")
+                  .setBusy(false);
               } catch (error) {
                 console.error("Error fetching data:", error);
                 // Handle error, maybe stop the interval:
                 clearInterval(this._autoRefreshInterval);
                 this._autoRefreshInterval = null; // Clear the interval ID
-                sap.m.MessageToast.show("Error loading data. Auto-refresh stopped.");
-                this.getView().byId("FPage5CategoryMgmt--columnCard").setBusy(false);
+                sap.m.MessageToast.show(
+                  "Error loading data. Auto-refresh stopped."
+                );
+                this.getView()
+                  .byId("FPage5CategoryMgmt--columnCard")
+                  .setBusy(false);
                 this.getView().byId("FPage5CategoryMgmtpieCard").setBusy(false);
               }
             }, 5000); // 5000 milliseconds = 5 seconds
           }
-
         } else {
           // localStorage.setItem("AUTO-REFRESH", "false");
           if (this._autoRefreshInterval) {
@@ -2636,19 +3242,17 @@ FROM TABLE_KG
 
       onClusterExpAutoRefresh: async function (oEvent) {
         /** [TODO] AUTO REFRESH FEATURE
-        * 1. Cluster Analysis main chart (d3): refresh overalls
-        * 2. Project Distribution chart (d3): disable auto refresh, refresh overalls
-        */
+         * 1. Cluster Analysis main chart (d3): refresh overalls
+         * 2. Project Distribution chart (d3): disable auto refresh, refresh overalls
+         */
 
         var oState = oEvent.getParameter("state");
 
         if (oState) {
           localStorage.setItem("AUTO-REFRESH", "true");
-
         } else {
           localStorage.setItem("AUTO-REFRESH", "false");
         }
-
       },
       generateOntologyData: function () {
         // ... (same generateOntologyData function from your original code) ...
@@ -2656,12 +3260,12 @@ FROM TABLE_KG
           class: { icon: "sap-icon://drill-up" },
           instance: { icon: "sap-icon://instance" },
           dataProperty: { icon: "sap-icon://key" },
-          objectProperty: { icon: "sap-icon://chain-link" }
+          objectProperty: { icon: "sap-icon://chain-link" },
         };
         const groups = [
           { key: "g1", title: "Classes" },
           { key: "g2", title: "Instances" },
-          { key: "g3", title: "Properties" }
+          { key: "g3", title: "Properties" },
         ];
 
         const nodes = [
@@ -2671,45 +3275,35 @@ FROM TABLE_KG
             title: "TechnicalAdvisor",
             icon: nodeCategories.class.icon,
             group: "g1",
-            attributes: [
-              { label: "Type", value: "Class" }
-            ]
+            attributes: [{ label: "Type", value: "Class" }],
           },
           {
             key: "n2",
             title: "TechnicalIssue",
             icon: nodeCategories.class.icon,
             group: "g1",
-            attributes: [
-              { label: "Type", value: "Class" }
-            ]
+            attributes: [{ label: "Type", value: "Class" }],
           },
           {
             key: "n3",
             title: "Solution",
             icon: nodeCategories.class.icon,
             group: "g1",
-            attributes: [
-              { label: "Type", value: "Class" }
-            ]
+            attributes: [{ label: "Type", value: "Class" }],
           },
           {
             key: "n4",
             title: "Equipment",
             icon: nodeCategories.class.icon,
             group: "g1",
-            attributes: [
-              { label: "Type", value: "Class" }
-            ]
+            attributes: [{ label: "Type", value: "Class" }],
           },
           {
             key: "n5",
             title: "MaintenanceRecord",
             icon: nodeCategories.class.icon,
             group: "g1",
-            attributes: [
-              { label: "Type", value: "Class" }
-            ]
+            attributes: [{ label: "Type", value: "Class" }],
           },
           {
             key: "n6",
@@ -2718,8 +3312,8 @@ FROM TABLE_KG
             group: "g2",
             attributes: [
               { label: "Type", value: "TechnicalAdvisor" },
-              { label: "Expertise", value: "Hydraulics" }
-            ]
+              { label: "Expertise", value: "Hydraulics" },
+            ],
           },
           {
             key: "n7",
@@ -2728,8 +3322,8 @@ FROM TABLE_KG
             group: "g2",
             attributes: [
               { label: "Type", value: "TechnicalIssue" },
-              { label: "Priority", value: "High" }
-            ]
+              { label: "Priority", value: "High" },
+            ],
           },
           {
             key: "n8",
@@ -2738,45 +3332,37 @@ FROM TABLE_KG
             group: "g2",
             attributes: [
               { label: "Type", value: "Solution" },
-              { label: "Approved", value: "Yes" }
-            ]
+              { label: "Approved", value: "Yes" },
+            ],
           },
           {
             key: "n9",
             title: "hasExpertise",
             icon: nodeCategories.dataProperty.icon,
             group: "g3",
-            attributes: [
-              { label: "Type", value: "DataProperty" }
-            ]
+            attributes: [{ label: "Type", value: "DataProperty" }],
           },
           {
             key: "n10",
             title: "resolves",
             icon: nodeCategories.objectProperty.icon,
             group: "g3",
-            attributes: [
-              { label: "Type", value: "ObjectProperty" }
-            ]
+            attributes: [{ label: "Type", value: "ObjectProperty" }],
           },
           {
             key: "n11",
             title: "assignedTo",
             icon: nodeCategories.objectProperty.icon,
             group: "g3",
-            attributes: [
-              { label: "Type", value: "ObjectProperty" }
-            ]
+            attributes: [{ label: "Type", value: "ObjectProperty" }],
           },
           {
             key: "n12",
             title: "requiresEquipment",
             icon: nodeCategories.objectProperty.icon,
             group: "g3",
-            attributes: [
-              { label: "Type", value: "ObjectProperty" }
-            ]
-          }
+            attributes: [{ label: "Type", value: "ObjectProperty" }],
+          },
         ];
 
         const lines = [
@@ -2790,13 +3376,13 @@ FROM TABLE_KG
           { from: "n10", to: "n3", title: "domain" },
           { from: "n10", to: "n2", title: "range" },
           { from: "n11", to: "n2", title: "domain" },
-          { from: "n11", to: "n1", title: "range" }
+          { from: "n11", to: "n1", title: "range" },
         ];
 
         return {
           nodes: nodes,
           lines: lines,
-          groups: groups
+          groups: groups,
         };
       },
 
@@ -2826,45 +3412,74 @@ FROM TABLE_KG
         // Initialize the process flow model
         var oModel = new sap.ui.model.json.JSONModel({
           nodes: [
-            { key: "1", title: "Step 1: Ask Me Anything", icon: "sap-icon://headset", status: "Warning", shape: "Circle" },
-            { key: "1a", title: "Step 2: Generate SPARQL query from user's entry", icon: "", status: "Warning", shape: "Box" },
-            { key: "2", title: "Retrieve data using Knowledge Graph engine", icon: "sap-icon://instance", status: "Warning", shape: "Circle", group: "1" },
-            { key: "3", title: "Step 4: Display and explore Knowledge Graph data & ontology", icon: "sap-icon://accept", status: "Warning", shape: "Circle" },
-            
+            {
+              key: "1",
+              title: "Step 1: Ask Me Anything",
+              icon: "sap-icon://headset",
+              status: "Warning",
+              shape: "Circle",
+            },
+            {
+              key: "1a",
+              title: "Step 2: Generate SPARQL query from user's entry",
+              icon: "",
+              status: "Warning",
+              shape: "Box",
+            },
+            {
+              key: "2",
+              title: "Retrieve data using Knowledge Graph engine",
+              icon: "sap-icon://instance",
+              status: "Warning",
+              shape: "Circle",
+              group: "1",
+            },
+            {
+              key: "3",
+              title:
+                "Step 4: Display and explore Knowledge Graph data & ontology",
+              icon: "sap-icon://accept",
+              status: "Warning",
+              shape: "Circle",
+            },
           ],
           lines: [
             { from: "1", to: "1a" },
             { from: "1a", to: "2" },
-            { from: "2", to: "3" }
+            { from: "2", to: "3" },
           ],
-          groups: [{ key: "1", title: "Step 3: Use SAP Knowledge Graph engine" },] // Initialize groups array
+          groups: [
+            { key: "1", title: "Step 3: Use SAP Knowledge Graph engine" },
+          ], // Initialize groups array
         });
 
         this.getView().setModel(oModel, "processflow");
-        
-        this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").setCurrentZoomLevel(0.8);
 
-      //   // Temp
-      //   var oEmptyModel = new sap.ui.model.json.JSONModel({
-      //     nodes: [{ key: "1", title: "Step 1: Ask Me Anything", icon: "sap-icon://headset", status: "Warning", shape: "Circle" }],
-      //     lines: [],
-      //     groups: []
-      //   });
-      //   // const networkGraphModel = generateNetworkGraphModel(exampleSqlSelectQuery, completeOntologyTTL);
-      //   this.getView().setModel(oEmptyModel, "kgresults");
+        this.getView()
+          .byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph")
+          .setCurrentZoomLevel(0.8);
 
-      //   var oBinding = this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getBinding("nodes");
-      //   console.log(oBinding);
-      //   // this.getGraph().getBinding("nodes");
+        //   // Temp
+        //   var oEmptyModel = new sap.ui.model.json.JSONModel({
+        //     nodes: [{ key: "1", title: "Step 1: Ask Me Anything", icon: "sap-icon://headset", status: "Warning", shape: "Circle" }],
+        //     lines: [],
+        //     groups: []
+        //   });
+        //   // const networkGraphModel = generateNetworkGraphModel(exampleSqlSelectQuery, completeOntologyTTL);
+        //   this.getView().setModel(oEmptyModel, "kgresults");
 
-			// // if (sKey === "nodata") {
-			// 	var oFilter = new Filter({
-			// 		path: "key",
-			// 		value1: "XXXXX",
-			// 		operator: FilterOperator.EQ
-			// 	});
+        //   var oBinding = this.getView().byId("FPage7EnhancedAdvisoryBuddy--processFlowGraph").getBinding("nodes");
+        //   console.log(oBinding);
+        //   // this.getGraph().getBinding("nodes");
 
-			// 	oBinding.filter(oFilter);
+        // // if (sKey === "nodata") {
+        // 	var oFilter = new Filter({
+        // 		path: "key",
+        // 		value1: "XXXXX",
+        // 		operator: FilterOperator.EQ
+        // 	});
+
+        // 	oBinding.filter(oFilter);
 
         // console.log(this.getView().byId("FPage7EnhancedAdvisoryBuddy--graphViewKGResults").getNoData());
 
@@ -2873,28 +3488,29 @@ FROM TABLE_KG
         /** [TODO] Learning Plan Assignment */
         // this.initMockDataForLearningPlanAssignmentDragDrop();
         // this.attachDragAndDrop();
-        getClusterData()
-          .then(data => {
-            pieCategoryData = data;
-            // console.log(JSON.stringify(data, null, 2)); // Nicely formatted output
-            // Fetch data from API and bind to the model
-            const oModel = new JSONModel();
-            oModel.setData({
-              clusters: data,
-              originalData: data, // Backup of original data for cancel functionality
-              isEditMode: false // Edit mode flag
-            }); // Bind data to the model
-            this.getView().setModel(oModel, "categorymgmt");
+        getClusterData().then((data) => {
+          pieCategoryData = data;
+          // console.log(JSON.stringify(data, null, 2)); // Nicely formatted output
+          // Fetch data from API and bind to the model
+          const oModel = new JSONModel();
+          oModel.setData({
+            clusters: data,
+            originalData: data, // Backup of original data for cancel functionality
+            isEditMode: false, // Edit mode flag
+          }); // Bind data to the model
+          this.getView().setModel(oModel, "categorymgmt");
 
-            oModel.setProperty("/originalData", JSON.parse(JSON.stringify(data))); // Deep copy for backup
+          oModel.setProperty("/originalData", JSON.parse(JSON.stringify(data))); // Deep copy for backup
 
-            // Initialize model with data and isEditMode flag
-          });
+          // Initialize model with data and isEditMode flag
+        });
 
         var oDeviceModel = new JSONModel(Device);
         this.getView().setModel(oDeviceModel, "device");
 
-        var oModel = new JSONModel(sap.ui.require.toUrl("chat/model/data.json"));
+        var oModel = new JSONModel(
+          sap.ui.require.toUrl("chat/model/data.json")
+        );
         this.getView().setModel(oModel, "nav");
 
         //  Shifted to onAfterRendering due to parent-child XML views rendering
@@ -2908,23 +3524,31 @@ FROM TABLE_KG
 
         // var oVizFrame = this.getView().byId(this.createId("FPage5CategoryMgmt--" + this._constants.vizFrame));
         // var oVizFrame = this.getView().byId(this._constants.vizFrame.id);
-        var oVizFrame = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame");
+        var oVizFrame = sap.ui
+          .getCore()
+          .byId(
+            "container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame"
+          );
         this._updateVizFrame(oVizFrame);
 
         // var oPieVizFrame = this.getView().byId(this.createId("FPage5CategoryMgmt--" + this._pieconstants.vizFrame));
-        var oPieVizFrame = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--piechartContainerVizFrame");
+        var oPieVizFrame = sap.ui
+          .getCore()
+          .byId(
+            "container-chat---App--FPage5CategoryMgmt--piechartContainerVizFrame"
+          );
         this._updatePieVizFrame(oPieVizFrame);
 
         // this.oRouter = this.getOwnerComponent().getRouter();
         // this.oRouter.attachRouteMatched(this.onRouteMatched, this);
         // this.oRouter.attachBeforeRouteMatched(this.onBeforeRouteMatched, this);
-        document.addEventListener('keydown', this.handleKeyDown.bind(this)); // Bind 'this'
+        document.addEventListener("keydown", this.handleKeyDown.bind(this)); // Bind 'this'
       },
 
       _updateVizFrame: async function (vizFrame) {
         var oVizFrame = this._constants.vizFrame;
-        const url = ALL_PROJECTS_BY_EXPERT_EP + '?expert=Jules';
-        const options = { method: 'GET' };
+        const url = ALL_PROJECTS_BY_EXPERT_EP + "?expert=Jules";
+        const options = { method: "GET" };
 
         try {
           const response = await fetch(url, options);
@@ -2950,7 +3574,7 @@ FROM TABLE_KG
 
       _updatePieVizFrame: async function (vizFrame) {
         var oVizFrame = this._pieconstants.vizFrame;
-        const options = { method: 'GET' };
+        const options = { method: "GET" };
 
         try {
           const response = await fetch(ALL_PROJECTS_CATEGORIES_EP, options);
@@ -2979,97 +3603,132 @@ FROM TABLE_KG
         dataset: {
           name: "Custom Popover",
           defaultSelected: 0,
-          values: [{
-          }, {
-          }, {
-            name: "Custom Content Pie Chart",
-            value: null,
-            popoverProps: {
-              'customDataControl': function (data) {
-                if (data.data.val) {
-                  // console.log(pieCategoryData);
+          values: [
+            {},
+            {},
+            {
+              name: "Custom Content Pie Chart",
+              value: null,
+              popoverProps: {
+                customDataControl: function (data) {
+                  if (data.data.val) {
+                    // console.log(pieCategoryData);
 
-                  var values = data.data.val;
-                  var divStr = "";
-                  var idx = values[1].value;
-                  // console.log(values);
+                    var values = data.data.val;
+                    var divStr = "";
+                    var idx = values[1].value;
+                    // console.log(values);
 
-                  // console.log("idx:", idx, "exData.length:", exData.length); // Debugging
+                    // console.log("idx:", idx, "exData.length:", exData.length); // Debugging
 
-                  const categoryValueFromB = values.find(item => item.id === "Category")?.value;
-                  const matchingCluster = pieCategoryData.find(item => item.category_label === categoryValueFromB);
-                  // console.log(matchingCluster.cluster_description);
-                  var categoryDescToDisplay;
-                  if (matchingCluster) {
-                    categoryDescToDisplay = matchingCluster.category_descr;
+                    const categoryValueFromB = values.find(
+                      (item) => item.id === "Category"
+                    )?.value;
+                    const matchingCluster = pieCategoryData.find(
+                      (item) => item.category_label === categoryValueFromB
+                    );
+                    // console.log(matchingCluster.cluster_description);
+                    var categoryDescToDisplay;
+                    if (matchingCluster) {
+                      categoryDescToDisplay = matchingCluster.category_descr;
+                    } else {
+                      categoryDescToDisplay = "No matching description";
+                    }
+
+                    var svg =
+                      "<svg width='10px' height='10px'><path d='M-5,-5L5,-5L5,5L-5,5Z' fill='#5cbae6' transform='translate(5,5)'></path></svg>";
+                    divStr +=
+                      "<div style = 'margin: 15px 30px 0 10px'>" +
+                      svg +
+                      "<b style='margin-left:10px'>" +
+                      values[0].value +
+                      "</b></div>";
+                    divStr +=
+                      "<div style = 'margin: 5px 30px 0 30px'>" +
+                      "<span style = 'float: left'>" +
+                      categoryDescToDisplay +
+                      "</span><br></div>";
+                    divStr +=
+                      "<div style = 'margin: 5px 30px 15px 30px'>" +
+                      "Total No. of Projects: <span style = 'float: right'>" +
+                      values[1].value +
+                      "</span></div>";
+                    return new HTMLControl({ content: divStr });
+
+                    // if (idx >= 0 && idx < exData.length) {
+                    //   var svg = "<svg width='10px' height='10px'><path d='M-5,-5L5,-5L5,5L-5,5Z' fill='#5cbae6' transform='translate(5,5)'></path></svg>";
+                    //   divStr += "<div style = 'margin: 15px 30px 0 10px'>" + svg + "<b style='margin-left:10px'>" + values[0].value + "</b></div>";
+                    //   divStr += "<div style = 'margin: 5px 30px 0 30px'>Total No. of Projects: <span style = 'float: right'>" + values[1].value + "</span></div>";
+                    //   divStr += "<div style = 'margin: 5px 30px 0 30px'>" + "<span style = 'float: right'>" + categoryDescToDisplay + "</span></div>";
+                    //   return new HTMLControl({ content: divStr });
+                    // } else {
+                    //   console.error("Index out of bounds:", idx);
+                    //   return new HTMLControl({ content: "Data not available" }); // Or return ""
+                    // }
                   } else {
-                    categoryDescToDisplay = "No matching description"
+                    console.error("data.data.val is undefined or null"); // Handle missing data
+                    return new HTMLControl({ content: "Data not available" }); // Or return ""
                   }
+                },
+              },
+            },
+            {
+              name: "Custom Content for Column Chart",
+              value: null,
+              popoverProps: {
+                customDataControl: function (data) {
+                  if (data.data.val) {
+                    // console.log(pieCategoryData);
 
-                  var svg = "<svg width='10px' height='10px'><path d='M-5,-5L5,-5L5,5L-5,5Z' fill='#5cbae6' transform='translate(5,5)'></path></svg>";
-                  divStr += "<div style = 'margin: 15px 30px 0 10px'>" + svg + "<b style='margin-left:10px'>" + values[0].value + "</b></div>";
-                  divStr += "<div style = 'margin: 5px 30px 0 30px'>" + "<span style = 'float: left'>" + categoryDescToDisplay + "</span><br></div>";
-                  divStr += "<div style = 'margin: 5px 30px 15px 30px'>" + "Total No. of Projects: <span style = 'float: right'>" + values[1].value + "</span></div>";
-                  return new HTMLControl({ content: divStr });
+                    var values = data.data.val;
+                    var divStr = "";
+                    var idx = values[1].value;
+                    // console.log(values);
 
-                  // if (idx >= 0 && idx < exData.length) {
-                  //   var svg = "<svg width='10px' height='10px'><path d='M-5,-5L5,-5L5,5L-5,5Z' fill='#5cbae6' transform='translate(5,5)'></path></svg>";
-                  //   divStr += "<div style = 'margin: 15px 30px 0 10px'>" + svg + "<b style='margin-left:10px'>" + values[0].value + "</b></div>";
-                  //   divStr += "<div style = 'margin: 5px 30px 0 30px'>Total No. of Projects: <span style = 'float: right'>" + values[1].value + "</span></div>";
-                  //   divStr += "<div style = 'margin: 5px 30px 0 30px'>" + "<span style = 'float: right'>" + categoryDescToDisplay + "</span></div>";
-                  //   return new HTMLControl({ content: divStr });
-                  // } else {
-                  //   console.error("Index out of bounds:", idx);
-                  //   return new HTMLControl({ content: "Data not available" }); // Or return ""
-                  // }
+                    // console.log("idx:", idx, "exData.length:", exData.length); // Debugging
 
-                } else {
-                  console.error("data.data.val is undefined or null"); // Handle missing data
-                  return new HTMLControl({ content: "Data not available" }); // Or return ""
-                }
-              }
-            }
-          },
-          {
-            name: "Custom Content for Column Chart",
-            value: null,
-            popoverProps: {
-              'customDataControl': function (data) {
-                if (data.data.val) {
-                  // console.log(pieCategoryData);
+                    const categoryValueFromB = values.find(
+                      (item) => item.id === "Category"
+                    )?.value;
+                    const matchingCluster = pieCategoryData.find(
+                      (item) => item.category_label === categoryValueFromB
+                    );
+                    // console.log(matchingCluster.cluster_description);
+                    var categoryDescToDisplay;
+                    if (matchingCluster) {
+                      categoryDescToDisplay = matchingCluster.category_descr;
+                    } else {
+                      categoryDescToDisplay = "No matching description";
+                    }
 
-                  var values = data.data.val;
-                  var divStr = "";
-                  var idx = values[1].value;
-                  // console.log(values);
-
-                  // console.log("idx:", idx, "exData.length:", exData.length); // Debugging
-
-                  const categoryValueFromB = values.find(item => item.id === "Category")?.value;
-                  const matchingCluster = pieCategoryData.find(item => item.category_label === categoryValueFromB);
-                  // console.log(matchingCluster.cluster_description);
-                  var categoryDescToDisplay;
-                  if (matchingCluster) {
-                    categoryDescToDisplay = matchingCluster.category_descr;
+                    var svg =
+                      "<svg width='10px' height='10px'><path d='M-5,-5L5,-5L5,5L-5,5Z' fill='#5cbae6' transform='translate(5,5)'></path></svg>";
+                    divStr +=
+                      "<div style = 'margin: 15px 30px 0 10px'>" +
+                      svg +
+                      "<b style='margin-left:10px'>" +
+                      values[0].value +
+                      "</b></div>";
+                    divStr +=
+                      "<div style = 'margin: 5px 30px 0 30px'>" +
+                      "<span style = 'float: left'>" +
+                      categoryDescToDisplay +
+                      "</span><br><br></div>";
+                    divStr +=
+                      "<div style = 'margin: 5px 30px 15px 30px'>" +
+                      "Total No. of Projects: <span style = 'float: right'>" +
+                      values[2].value +
+                      "</span></div>";
+                    return new HTMLControl({ content: divStr });
                   } else {
-                    categoryDescToDisplay = "No matching description"
+                    console.error("data.data.val is undefined or null");
+                    return new HTMLControl({ content: "Data not available" });
                   }
-
-                  var svg = "<svg width='10px' height='10px'><path d='M-5,-5L5,-5L5,5L-5,5Z' fill='#5cbae6' transform='translate(5,5)'></path></svg>";
-                  divStr += "<div style = 'margin: 15px 30px 0 10px'>" + svg + "<b style='margin-left:10px'>" + values[0].value + "</b></div>";
-                  divStr += "<div style = 'margin: 5px 30px 0 30px'>" + "<span style = 'float: left'>" + categoryDescToDisplay + "</span><br><br></div>";
-                  divStr += "<div style = 'margin: 5px 30px 15px 30px'>" + "Total No. of Projects: <span style = 'float: right'>" + values[2].value + "</span></div>";
-                  return new HTMLControl({ content: divStr });
-
-
-                } else {
-                  console.error("data.data.val is undefined or null");
-                  return new HTMLControl({ content: "Data not available" });
-                }
-              }
-            }
-          }]
-        }
+                },
+              },
+            },
+          ],
+        },
       },
 
       onAfterRendering: function () {
@@ -3079,34 +3738,49 @@ FROM TABLE_KG
         this._handleMediaChange();
         this.getView().byId("sideNavigation").setSelectedKey("page1");
 
-        fetch(ALL_PROJECTS_EP, { method: 'GET' }) // No 'await' here
-          .then(response => response.json())
-          .then(data => {
+        fetch(ALL_PROJECTS_EP, { method: "GET" }) // No 'await' here
+          .then((response) => response.json())
+          .then((data) => {
             var oProjects = new JSONModel(data);
             this.getView().setModel(oProjects, "projects");
             var oSettingsModel = new JSONModel({ navigatedItem: "" });
-            this.getView().setModel(oSettingsModel, 'settings');
+            this.getView().setModel(oSettingsModel, "settings");
 
             // ... your DOM manipulation code (but see note below about timing)
           })
-          .catch(error => {
+          .catch((error) => {
             console.error("In onAfterRendering:");
             console.error(error);
           });
 
-
         /** Methods to connect click popover on charts */
-        var catVizFrame = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--piechartContainerVizFrame");
-        var oPopOverPie = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--idPopOverPie");
+        var catVizFrame = sap.ui
+          .getCore()
+          .byId(
+            "container-chat---App--FPage5CategoryMgmt--piechartContainerVizFrame"
+          );
+        var oPopOverPie = sap.ui
+          .getCore()
+          .byId("container-chat---App--FPage5CategoryMgmt--idPopOverPie");
         /** [TODO] Improve Popover to include Cluster Desecription */
         // var xxjson = { 'customDataControl': function (data) { if (data.data.val) { var exData = [{ "Owner": "Brooks A. Williams", "Phone": "778-721-2235" }, { "Owner": "Candice C. Bernardi", "Phone": "204-651-2434" }, { "Owner": "Robert A. Cofield", "Phone": "262-684-6815" }, { "Owner": "Melissa S. Maciel", "Phone": "778-983-3365" }, { "Owner": "Diego C. Lawton", "Phone": "780-644-4957" }, { "Owner": "Anthony K. Evans", "Phone": "N/A" }, { "Owner": "Sue K. Gonzalez", "Phone": "647-746-4119" }, { "Owner": "Nancy J. Oneal", "Phone": "N/A" }, { "Owner": "Sirena C. Mack", "Phone": "905-983-3365" }, { "Owner": "Gloria K. Bowlby", "Phone": "N/A" }]; var values = data.data.val, divStr = "", idx = values[1].value; var svg = "<svg width='10px' height='10px'><path d='M-5,-5L5,-5L5,5L-5,5Z' fill='#5cbae6' transform='translate(5,5)'></path></svg>"; divStr = divStr + "<div style = 'margin: 15px 30px 0 10px'>" + svg + "<b style='margin-left:10px'>" + values[0].value + "</b></div>"; divStr = divStr + "<div style = 'margin: 5px 30px 0 30px'>" + values[2].name + "<span style = 'float: right'>" + values[2].value + "</span></div>"; divStr = divStr + "<div style = 'margin: 5px 30px 0 30px'>" + "Owner<span style = 'float: right'>" + exData[idx].Owner + "</span></div>"; divStr = divStr + "<div style = 'margin: 5px 30px 15px 30px'>" + "Phone<span style = 'float: right'>" + exData[idx].Phone + "</span></div>"; return new HTMLControl({ content: divStr }); } } };
         // console.log(xxjson);
-        oPopOverPie = new Popover(this.settingsModel.dataset.values[2].popoverProps);
+        oPopOverPie = new Popover(
+          this.settingsModel.dataset.values[2].popoverProps
+        );
         oPopOverPie.connect(catVizFrame.getVizUid());
 
-        var colVizFrame = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame");
-        var oPopOverCol = sap.ui.getCore().byId("container-chat---App--FPage5CategoryMgmt--idPopOverCol");
-        oPopOverCol = new Popover(this.settingsModel.dataset.values[3].popoverProps);
+        var colVizFrame = sap.ui
+          .getCore()
+          .byId(
+            "container-chat---App--FPage5CategoryMgmt--chartContainerVizFrame"
+          );
+        var oPopOverCol = sap.ui
+          .getCore()
+          .byId("container-chat---App--FPage5CategoryMgmt--idPopOverCol");
+        oPopOverCol = new Popover(
+          this.settingsModel.dataset.values[3].popoverProps
+        );
         oPopOverCol.connect(colVizFrame.getVizUid());
       },
 
@@ -3159,11 +3833,11 @@ FROM TABLE_KG
       },
 
       _setToggleButtonTooltip: function (bLarge) {
-        var oToggleButton = this.getView().byId('sideNavigationToggleButton');
+        var oToggleButton = this.getView().byId("sideNavigationToggleButton");
         if (bLarge) {
-          oToggleButton.setTooltip('Large Size Navigation');
+          oToggleButton.setTooltip("Large Size Navigation");
         } else {
-          oToggleButton.setTooltip('Small Size Navigation');
+          oToggleButton.setTooltip("Small Size Navigation");
         }
       },
 
@@ -3247,7 +3921,7 @@ FROM TABLE_KG
 
       onExit: function () {
         Device.media.detachHandler(this._handleMediaChange, this);
-        document.removeEventListener('keydown', this.handleKeyDown.bind(this));
+        document.removeEventListener("keydown", this.handleKeyDown.bind(this));
       },
 
       onDeleteChat: async function (evt) {

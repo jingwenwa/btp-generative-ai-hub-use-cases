@@ -12,26 +12,41 @@
 	xmlns:layout="sap.ui.layout"
     xmlns:ng="sap.suite.ui.commons.networkgraph">
     <MessageStrip
-        text="The search tool is powered by semantic search (in-database embeddings) from SAP HANA Cloud."
+        text="The search tool is powered by Semantics search (in-database embeddings) from SAP HANA Cloud."
         showIcon="true"
         customIcon="sap-icon://search"
         showCloseButton="true"
         class="sapUiTinyMarginBottom">
     </MessageStrip>
-    <OverflowToolbar height="auto" width="100%">
-        <ToolbarSpacer />
-        <FeedInput
-            showIcon="true"
-            icon="sap-icon://ai"
-            placeholder="Enter a question..."
-            growing="false"
-            rows="3"
-            post=".onEmbedHANASimilaritySearch"
-            enabled="{ui>/enabled}"
-            class="sapUiTinyMarginTopBottom"
-            binding="{/getAiResponse(...)}" />
-        <ToolbarSpacer />
-    </OverflowToolbar>
+        <OverflowToolbar height="auto" width="100%">
+            <!-- NSMAN ID input -->
+            <VBox class="sapUiSmallMarginEnd">
+                <Label text="NSMAN ID"/>
+                <Input
+                    id="nsmanIdInput"
+                    placeholder="Enter ID"
+                    type="Number"
+                    width="10rem"
+                    liveChange=".onIdChange"
+                    enabled="{ui>/enabled}" />
+            </VBox>
+
+            <!-- FeedInput fills remaining space -->
+            <FeedInput
+                icon="sap-icon://ai"
+                id="hanaSearchInput"
+                placeholder="Enter your prompt..."
+                growing="false"
+                rows="3"
+                post=".onEmbedHANASimilaritySearch"
+                enabled="{ui>/enabled}"
+                class="sapUiTinyMarginTopBottom"
+                width="25rem">   <!-- fixed width, e.g. 25rem -->
+                <layoutData>
+                    <OverflowToolbarLayoutData shrinkable="true" priority="High"/>
+                </layoutData>
+            </FeedInput>
+        </OverflowToolbar>
         <f:GridList
         id="gridList"
         headerText=""
@@ -50,20 +65,14 @@
                     <FlexItemData growFactor="1" shrinkFactor="0" />
                 </layoutData>
                 <VBox class="sapUiSmallMargin">
-                    <Title text="Recommendation #{search>project_number}" wrapping="true" />
-                    <ExpandableText class="sapUiTinyMarginBottom sapUiTinyMarginTop" text="{search>TEXT}" overflowMode="Popover" />
-                    <HBox alignItems="Center">
-                        <Label text="Match score:" wrapping="true" />
-                        <tnt:InfoLabel text="{path: 'search>SIMILARITY', formatter: '.formatMatchingScore'}" colorScheme="{path: 'search>SIMILARITY', formatter: '.formatMatchingScoreColor'}" />
-                    </HBox>
+                    <Title text="Booking {search>BOOKING_NO}" wrapping="true" />
+                    <ExpandableText class="sapUiTinyMarginBottom sapUiTinyMarginTop sapUiLargeFontSize" text="{search>TEXT}" overflowMode="Popover" />
                 </VBox>
                 
                 <OverflowToolbar design="Solid" class="sapContrast">
                     <Button icon="sap-icon://hint" type="Transparent" press="onCoinStar"/>
                     <ToolbarSpacer />
-                    <Button icon="sap-icon://add-favorite" type="Transparent" press="onAddFav"/>
-                    <Button icon="sap-icon://copy" type="Transparent" press="onCopy"/>
-                    <Button icon="sap-icon://call" type="Transparent" press="onCall"/>
+                    <Button text="Book" type="Emphasized" press="onBook"/>
                 </OverflowToolbar>
             </VBox>
         </f:GridListItem>
