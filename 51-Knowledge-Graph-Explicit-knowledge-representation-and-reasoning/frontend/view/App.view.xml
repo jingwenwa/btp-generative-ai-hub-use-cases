@@ -27,7 +27,7 @@
 					   class="sapUiTinyMargin"
 					   src="https://cdn-icons-gif.flaticon.com/17556/17556499.gif" />
 				<VBox class="sapUiNoMargin sapUiSmallMarginTop">
-				<Title text="Smart Advisory Companion" class="sapUiSmallMarginTop titleWithOverlapLabel" wrapping="true" id="productName">
+				<Title text="Digital Concierge​" class="sapUiSmallMarginTop titleWithOverlapLabel" wrapping="true" id="productName">
 				</Title>
 				<Label text="Knowledge Graph showcase" class="overlappingLabel" labelFor="productName" vAlign="Bottom"/>
 				<!-- <tnt:InfoLabel text="Knowledge Graph" icon="" colorScheme="7" width="" class="sapUiNoMargin"/> -->
@@ -128,7 +128,7 @@
                     </Page>
 					<Page id="page2" floatingFooter="false" busy="{ui>/busy}" busyIndicatorDelay="0">
                         <headerContent>
-                            <Title text="Advisory Buddy Search Tool" class="sapUiSmallMargin"/>
+                            <Title text="Digital Concierge​ Search" class="sapUiSmallMargin"/>
                             <ToolbarSpacer />
                         </headerContent>
                         <content>
@@ -202,7 +202,7 @@
                     </Page>
 					<Page id="page7" floatingFooter="false" busy="{ui>/busy}" busyIndicatorDelay="0">
                         <headerContent>
-                            <Title text="Enhanced Advisory Buddy" class="sapUiSmallMargin"/>
+                            <Title text="Enhanced Digital Concierge​ Search" class="sapUiSmallMargin"/>
                             <!-- <ToolbarSpacer />
 							<ToolbarSpacer />
 							<ToolbarSpacer /> -->

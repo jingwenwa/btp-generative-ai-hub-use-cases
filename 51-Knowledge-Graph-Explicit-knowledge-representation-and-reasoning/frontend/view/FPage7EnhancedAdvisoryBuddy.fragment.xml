@@ -176,7 +176,7 @@
                 <VBox>
                     <f:Card id="processCard" visible="true" width="95%" class="sapUiSmallMarginBegin sapUiSmallMarginTop sapUiTinyMarginEnd sapUiSmallMarginBottom">
                         <f:header>
-                            <card:Header title="Process flow of the Enhanced Advisory Buddy" subtitle="What is happening behind the scenes?" />
+                            <card:Header title="Process flow of the Enhanced Digital Concierge​" subtitle="What is happening behind the scenes?" />
                         </f:header>
                         <f:content>
                             <ng:Graph enableWheelZoom="false"
