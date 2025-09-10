@@ -27,9 +27,9 @@
 					   class="sapUiTinyMargin"
 					   src="https://cdn-icons-gif.flaticon.com/17556/17556499.gif" />
 				<VBox class="sapUiNoMargin sapUiSmallMarginTop">
-				<Title text="Smart Advisory Companion" class="sapUiSmallMarginTop titleWithOverlapLabel" wrapping="true" id="productName">
+				<Title text="Digital Concierge" class="sapUiSmallMarginTop titleWithOverlapLabel" wrapping="true" id="productName">
 				</Title>
-				<Label text="Knowledge Graph showcase" class="overlappingLabel" labelFor="productName" vAlign="Bottom"/>
+				<Label text="Knowledge Graph and Vector DB Showcase" class="overlappingLabel" labelFor="productName" vAlign="Bottom"/>
 				<!-- <tnt:InfoLabel text="Knowledge Graph" icon="" colorScheme="7" width="" class="sapUiNoMargin"/> -->
 				</VBox>
 				<tnt:InfoLabel id="" text="UNDER DEVELOPMENT" icon="sap-icon://vehicle-repair" colorScheme="7" width="" class="sapUiTinyMargin"/>

@@ -1,0 +1,21 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/nsmen-ontology/> .
+@prefix schema: <https://schema.org/> .
+
+:Rule_PESF_Exempt_IPPT rdf:type :ExemptionRule ;
+    :appliesTo :PES_F ;
+    :appliesTo :IPPT ;
+    schema:identifier "Policy-001" .
+
+:Rule_Annual_IPPT_Obligation rdf:type :ObligationRule ;
+    :appliesTo :NSMan ;
+    :attemptsPerYear 1 ;
+    schema:identifier "Policy-002" .
+
+:Deferment_Study_2025 rdf:type :Deferment ;
+    skos:prefLabel "Study Deferment" ;
+    schema:dateCreated "2025-01-15T00:00:00"^^xsd:dateTime .
+
+:ExitPermit_2025_01 rdf:type :ExitPermit ;
+    skos:prefLabel "Exit Permit for overseas travel" ;
+    schema:dateCreated "2025-07-01T00:00:00"^^xsd:dateTime ;
+    schema:dateModified "2025-07-10T00:00:00"^^xsd:dateTime .

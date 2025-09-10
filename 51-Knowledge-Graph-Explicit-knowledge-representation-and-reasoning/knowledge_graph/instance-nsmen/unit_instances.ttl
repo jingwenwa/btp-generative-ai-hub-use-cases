@@ -1,0 +1,10 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/nsmen-ontology/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+:Unit_1SIR rdf:type :Unit ;
+    foaf:name "1st Singapore Infantry Regiment" ;
+    :identifier "1SIR" .
+
+:Unit_2PDF rdf:type :Unit ;
+    foaf:name "2nd People’s Defence Force" ;
+    :identifier "2PDF" .

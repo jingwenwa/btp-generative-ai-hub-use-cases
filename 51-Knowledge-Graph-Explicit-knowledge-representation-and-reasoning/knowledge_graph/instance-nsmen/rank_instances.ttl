@@ -1,0 +1,15 @@
+@prefix : <http://www.semanticweb.org/ontologies/2025/nsmen-ontology/> .
+
+:Recruit rdf:type :Rank .
+:Private rdf:type :Rank .
+:LanceCorporal rdf:type :Rank .
+:Corporal rdf:type :Rank .
+:Sergeant rdf:type :Rank .
+:StaffSergeant rdf:type :Rank .
+:WO1 rdf:type :Rank .
+:WO2 rdf:type :Rank .
+:SWO1 rdf:type :Rank .
+:SWO2 rdf:type :Rank .
+:Lieutenant rdf:type :Rank .
+:Captain rdf:type :Rank .
+:Major rdf:type :Rank .

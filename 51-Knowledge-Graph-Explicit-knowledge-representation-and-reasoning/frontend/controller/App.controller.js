@@ -609,13 +609,13 @@ SELECT *
 FROM SPARQL_TABLE('
 prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>
+prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
 prefix owl: <http://www.w3.org/2002/07/owl#>
 prefix foaf: <http://xmlns.com/foaf/0.1/>
 prefix xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?partner ?pbcOrderNumber
-FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf-v4>
-FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-inferred-triples-v4>
+FROM <http://www.semanticweb.org/ontologies/2025/advisory-rdf-test>
+FROM <http://www.semanticweb.org/ontologies/2025/advisory-inferred-triples-v4>
 WHERE {
 ?partner a :SAPPartner .
 ?partner :requested ?serviceRequest .
@@ -634,13 +634,13 @@ FROM TABLE_KG
     // FROM SPARQL_TABLE('
     // prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     // prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    // prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>
+    // prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
     // prefix owl: <http://www.w3.org/2002/07/owl#>
     // prefix foaf: <http://xmlns.com/foaf/0.1/>
     // prefix xsd: <http://www.w3.org/2001/XMLSchema#>
     // SELECT ?pbcOrderNumber ?sapEmployee
-    // FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf-v4>
-    // FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-inferred-triples-v4>
+    // FROM <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
+    // FROM <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>
     // WHERE {
     // ?serviceRequest a :SAPServiceRequest;
     // :hasUseCase ?useCase;
@@ -665,7 +665,7 @@ FROM TABLE_KG
     @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
     @prefix owl: <http://www.w3.org/2002/07/owl#>.
     @prefix foaf: <http://xmlns.com/foaf/0.1/>.
-    @prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>.
+    @prefix : <http://www.semanticweb.org/ontologies/2025/advisory-rdf-test/>.
     
     :SAPPartner :accountName xsd:string .
     :UseCase :aiScenarioType :SAPAIScenario .
@@ -1052,8 +1052,8 @@ FROM TABLE_KG
           results: [],
           columns: [],
           sparqlQuery: "",
-          ontology: "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology",
-          dataSource: "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf3"
+          ontology: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test",
+          dataSource: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test"
         });
         this.getView().setModel(oModel, "kgSparqlExplorerTable");
 
@@ -1185,8 +1185,8 @@ FROM TABLE_KG
           results: [],
           columns: [],
           sparqlQuery: "",
-          ontology: "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology",
-          dataSource: "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf3"
+          ontology: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test",
+          dataSource: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test"
         });
         this.getView().setModel(oModel, "kgSparqlTable");
 
@@ -1415,8 +1415,8 @@ FROM TABLE_KG
           results: [],
           columns: [],
           sparqlQuery: "",
-          ontology: "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology",
-          dataSource: "http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf3"
+          ontology: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test",
+          dataSource: "http://www.semanticweb.org/ontologies/2025/advisory-ontology-test"
         });
         this.getView().setModel(oModel, "kgSparqlTable");
 
@@ -1642,7 +1642,7 @@ FROM TABLE_KG
         //   sSparqlQuery = "prefix owl: <http://www.w3.org/2002/07/owl#>\n" + sSparqlQuery;
         // }
 
-        // sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>\n" + sSparqlQuery;
+        // sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>\n" + sSparqlQuery;
 
         // // Step 5: Add FROM clause if missing
         // if (sDataSource && !sSparqlQuery.includes("FROM")) {
@@ -1772,7 +1772,7 @@ FROM TABLE_KG
       //     sSparqlQuery = "prefix owl: <http://www.w3.org/2002/07/owl#>\n" + sSparqlQuery;
       //   }
 
-      //   sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>\n" + sSparqlQuery;
+      //   sSparqlQuery = "prefix : <http://www.semanticweb.org/ontologies/2025/advisory-ontology-test/>\n" + sSparqlQuery;
 
       //   // Step 5: Add FROM clause if missing
       //   if (sDataSource && !sSparqlQuery.includes("FROM")) {
@@ -2090,11 +2090,11 @@ FROM TABLE_KG
 
         var self = this;
         /** [TO IMPROVE: if change of fragment ID can lead to problems] */
-        // self.getView().byId("FPage2AdvisoryBuddy--gridList").setHeaderText("Top 5 Similar Requests: " + cleanValue);
+        // self.getView().byId("FPage2AdvisoryBuddy--gridList").setHeaderText("Top 5 Recommendations: " + cleanValue);
 
         /** Improvements: for reusability of fragment */
         var oGridList1 = this.getView().byId(this.createId("FPage2AdvisoryBuddy--gridList"));
-        oGridList1.setHeaderText("Top 5 Similar Requests: " + cleanValue);
+        oGridList1.setHeaderText("Top 5 Recommendations: " + cleanValue);
 
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
@@ -3339,7 +3339,6 @@ FROM TABLE_KG
         chatModel.updateBindings(true);
         return systemMessage;
       },
-      
     });
   }
 );
