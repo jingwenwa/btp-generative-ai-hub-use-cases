@@ -1,159 +1,200 @@
-@prefix : <http://example.org/nsmen#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix :      <http://kg.ns.sg/ontology/> .
+@prefix nsi:   <http://kg.ns.sg/instances/> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix org:   <http://www.w3.org/ns/org#> .
+@prefix schema:<https://schema.org/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix time:  <http://www.w3.org/2006/time#> .
+@prefix geo:   <http://www.opengis.net/ont/geosparql#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://kg.ns.sg/ontology/> rdf:type owl:Ontology .
 
 #################################################################
-# Classes
-#################################################################
-:NSMen rdf:type rdfs:Class ;
-    rdfs:label "NS Men" ;
-    rdfs:comment "Represents a National Serviceman (NSMen) and his related activities." .
-
-:Intent rdf:type rdfs:Class ;
-    rdfs:label "Intent" ;
-    rdfs:comment "An intention or action expressed by an NSMen (e.g., Book IPPT, Cancel IPPT)." .
-
-:MedicalStatus rdf:type rdfs:Class ;
-    rdfs:label "Medical Status" ;
-    rdfs:comment "The medical evaluation result of the NSMen." .
-
-:IPPTSession rdf:type rdfs:Class ;
-    rdfs:label "IPPT Session" ;
-    rdfs:comment "A scheduled IPPT session at a specific date and location." .
-
-:Transaction rdf:type rdfs:Class ;
-    rdfs:label "Transaction" ;
-    rdfs:comment "A transaction record for booking, cancelling, or rescheduling IPPT sessions." .
-
-:EligibilityStatus rdf:type rdfs:Class ;
-    rdfs:label "Eligibility Status" ;
-    rdfs:comment "Indicates if the NSMen is eligible for IPPT booking, with reason." .
-
-:DateOfBirth rdf:type rdfs:Class ;
-    rdfs:label "Date of Birth" ;
-    rdfs:comment "Birthdate of the NSMen, used for age-based eligibility." .
-
-#################################################################
-# Object Properties
-#################################################################
-:hasIntent rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :Intent ;
-    rdfs:label "has intent" ; rdfs:comment "Links an NSMen to his declared intent." .
-
-:hasMedicalStatus rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :MedicalStatus ;
-    rdfs:label "has medical status" .
-
-:hasDOB rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :DateOfBirth ;
-    rdfs:label "has date of birth" .
-
-:hasEligibilityStatus rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :EligibilityStatus ;
-    rdfs:label "has eligibility status" .
-
-:hasTransaction rdf:type rdf:Property ; rdfs:domain :NSMen ; rdfs:range :Transaction ;
-    rdfs:label "has transaction" .
-
-:session rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range :IPPTSession ;
-    rdfs:label "linked session" .
-
-#################################################################
-# Data Properties
-#################################################################
-:dob rdf:type rdf:Property ; rdfs:domain :DateOfBirth ; rdfs:range xsd:date ;
-    rdfs:label "date of birth" .
-
-:result rdf:type rdf:Property ; rdfs:domain :MedicalStatus ; rdfs:range xsd:string .
-
-:lastUpdated rdf:type rdf:Property ; rdfs:domain :MedicalStatus ; rdfs:range xsd:date .
-
-:isEligible rdf:type rdf:Property ; rdfs:domain :EligibilityStatus ; rdfs:range xsd:boolean .
-
-:reason rdf:type rdf:Property ; rdfs:domain :EligibilityStatus ; rdfs:range xsd:string .
-
-:transactionType rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range xsd:string .
-
-:status rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range xsd:string .
-
-:timestamp rdf:type rdf:Property ; rdfs:domain :Transaction ; rdfs:range xsd:dateTime .
-
-:date rdf:type rdf:Property ; rdfs:domain :IPPTSession ; rdfs:range xsd:date .
-
-:location rdf:type rdf:Property ; rdfs:domain :IPPTSession ; rdfs:range xsd:string .
-
-:availability rdf:type rdf:Property ; rdfs:domain :IPPTSession ; rdfs:range xsd:integer .
-
-#################################################################
-# Example Individuals
+# CLASSES
 #################################################################
 
-# John Doe - Successful booking
-:JohnDoe rdf:type :NSMen ;
-    :hasIntent :BookIPPT ;
-    :hasMedicalStatus :MSP_Passed ;
-    :hasDOB :JohnDOB ;
-    :hasEligibilityStatus :Eligibility_1 ;
-    :hasTransaction :Transaction_123 .
+# People
+:NSMan rdf:type owl:Class ;
+       rdfs:subClassOf foaf:Person ;
+       rdfs:comment "Operationally-Ready National Serviceman (reservist)."@en .
 
-:BookIPPT rdf:type :Intent ; rdfs:label "Book IPPT" .
+:FullTimeNSF rdf:type owl:Class ;
+       rdfs:subClassOf foaf:Person ;
+       rdfs:comment "Full-time National Serviceman (NSF)."@en .
 
-:MSP_Passed rdf:type :MedicalStatus ;
-    :result "Pass" ;
-    :lastUpdated "2025-06-15"^^xsd:date .
+:SupportOfficer rdf:type owl:Class ;
+       rdfs:subClassOf foaf:Person ;
+       rdfs:comment "NSRO or supporting officer."@en .
 
-:JohnDOB rdf:type :DateOfBirth ;
-    :dob "1990-06-12"^^xsd:date .
+# Units and organizations
+:Unit rdf:type owl:Class ;
+      rdfs:subClassOf org:Organization ;
+      rdfs:comment "Military unit entity."@en .
 
-:Eligibility_1 rdf:type :EligibilityStatus ;
-    :isEligible true ;
-    :reason "Medically cleared and within IPPT age range" .
+:ServiceBranch rdf:type owl:Class ;
+      rdfs:subClassOf :Unit ;
+      rdfs:comment "Service branch (Army, Navy, Air Force, SPF, SCDF)."@en .
 
-:IPPT_2025_08_25 rdf:type :IPPTSession ;
-    :date "2025-08-25"^^xsd:date ;
-    :location "Khatib Camp" ;
-    :availability 10 .
+:Vocation rdf:type owl:Class ;
+      rdfs:comment "Specific vocation under a Service Branch."@en .
 
-:Transaction_123 rdf:type :Transaction ;
-    :transactionType "Book" ;
-    :status "Success" ;
-    :timestamp "2025-08-22T10:00:00"^^xsd:dateTime ;
-    :session :IPPT_2025_08_25 .
+# PES and Medical
+:PESStatus rdf:type owl:Class ;
+      rdfs:comment "Medical fitness status (PES A–F)."@en .
 
-# Alex Tan - Failed due to medical
-:AlexTan rdf:type :NSMen ;
-    :hasIntent :BookIPPT ;
-    :hasMedicalStatus :MSP_Failed ;
-    :hasDOB :AlexDOB ;
-    :hasEligibilityStatus :Eligibility_2 .
+# Activities
+:ServiceType rdf:type owl:Class ;
+      rdfs:comment "Kinds of obligated activities."@en .
 
-:MSP_Failed rdf:type :MedicalStatus ;
-    :result "Fail" ;
-    :lastUpdated "2025-07-10"^^xsd:date .
+:Booking rdf:type owl:Class ;
+      rdfs:comment "Booking record (generic)."@en .
 
-:AlexDOB rdf:type :DateOfBirth ;
-    :dob "1985-01-05"^^xsd:date .
+:IPPTBooking rdf:type owl:Class ;
+      rdfs:subClassOf :Booking ;
+      rdfs:comment "Booking for IPPT."@en .
 
-:Eligibility_2 rdf:type :EligibilityStatus ;
-    :isEligible false ;
-    :reason "Failed medical screening." .
+:IPPTAttempt rdf:type owl:Class ;
+      rdfs:comment "Represents quotas and yearly attempt commitments."@en .
 
-# Lim Wei - Cancelled booking
-:LimWei rdf:type :NSMen ;
-    :hasIntent :CancelIPPT ;
-    :hasMedicalStatus :MSP_Passed ;
-    :hasDOB :LimDOB ;
-    :hasEligibilityStatus :Eligibility_3 ;
-    :hasTransaction :Transaction_456 .
+# Policies
+:PolicyRule rdf:type owl:Class ;
+      rdfs:comment "Formal policy rule."@en .
 
-:CancelIPPT rdf:type :Intent ; rdfs:label "Cancel IPPT" .
+:ExemptionRule rdf:type owl:Class ;
+      rdfs:subClassOf :PolicyRule ;
+      rdfs:comment "Policy exemption rule."@en .
 
-:LimDOB rdf:type :DateOfBirth ;
-    :dob "1992-11-30"^^xsd:date .
+:EligibilityRule rdf:type owl:Class ;
+      rdfs:subClassOf :PolicyRule ;
+      rdfs:comment "Policy eligibility rule."@en .
 
-:Eligibility_3 rdf:type :EligibilityStatus ;
-    :isEligible true ;
-    :reason "Eligible but cancelled booking." .
+:ObligationRule rdf:type owl:Class ;
+      rdfs:subClassOf :PolicyRule ;
+      rdfs:comment "Policy obligation rule."@en .
 
-:Transaction_456 rdf:type :Transaction ;
-    :transactionType "Cancel" ;
-    :status "Cancelled" ;
-    :timestamp "2025-08-20T15:30:00"^^xsd:dateTime ;
-    :session :IPPT_2025_08_25 .
+# Admin
+:ExitPermit rdf:type owl:Class ;
+      rdfs:comment "Exit permit record."@en .
+
+:Deferment rdf:type owl:Class ;
+      rdfs:comment "Deferment record."@en .
+
+# Places
+:Location rdf:type owl:Class ;
+      rdfs:subClassOf geo:Feature ;
+      rdfs:comment "Camp, base, or fitness centre."@en .
+
+
+#################################################################
+# OBJECT PROPERTIES
+#################################################################
+
+:hasPESStatus rdf:type owl:ObjectProperty , owl:FunctionalProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range  :PESStatus ;
+      rdfs:comment "Each NSMan has exactly one PES status."@en .
+
+:servesIn rdf:type owl:ObjectProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range  :Unit ;
+      rdfs:comment "Unit an NSMan is serving in."@en .
+
+:hasRank rdf:type owl:ObjectProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range skos:Concept ;
+      rdfs:comment "Rank held by an NSMan, from Rank scheme."@en .
+
+:hasObligation rdf:type owl:ObjectProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range  :ObligationRule ;
+      rdfs:comment "Obligation associated with an NSMan."@en .
+
+:hasBooking rdf:type owl:ObjectProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range  :Booking ;
+      owl:inverseOf :bookedBy ;
+      rdfs:comment "Booking record for an NSMan."@en .
+
+:bookedBy rdf:type owl:ObjectProperty ;
+      rdfs:domain :Booking ;
+      rdfs:range  :NSMan .
+
+:occursAt rdf:type owl:ObjectProperty ;
+      rdfs:domain :Booking ;
+      rdfs:range  :Location .
+
+:hasTime rdf:type owl:ObjectProperty ;
+      rdfs:domain :Booking ;
+      rdfs:range  time:TemporalEntity .
+
+:appliesTo rdf:type owl:ObjectProperty ;
+      rdfs:domain :PolicyRule ;
+      rdfs:range  [ a owl:Class ;
+                    owl:unionOf ( :PESStatus :NSMan :Unit )
+                  ] .
+
+:hasScope rdf:type owl:ObjectProperty ;
+      rdfs:domain :PolicyRule ;
+      rdfs:range  [ a owl:Class ;
+                    owl:unionOf ( :ServiceBranch :Unit )
+                  ] .
+
+:hasDeferment rdf:type owl:ObjectProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range  :Deferment .
+
+:hasExitPermit rdf:type owl:ObjectProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range  :ExitPermit .
+
+#################################################################
+# DATATYPE PROPERTIES
+#################################################################
+
+foaf:name rdf:type owl:DatatypeProperty ;
+      rdfs:domain [ owl:unionOf ( :NSMan :Unit :Location ) ] ;
+      rdfs:range xsd:string .
+
+schema:identifier rdf:type owl:DatatypeProperty ;
+      rdfs:domain owl:Thing ;
+      rdfs:range xsd:string .
+
+:email rdf:type owl:DatatypeProperty ;
+      rdfs:domain :NSMan ;
+      rdfs:range xsd:string .
+
+:status rdf:type owl:DatatypeProperty ;
+      rdfs:domain [ owl:unionOf ( :Booking :Deferment :ExitPermit ) ] ;
+      rdfs:range xsd:string .
+
+:bookingRef rdf:type owl:DatatypeProperty ;
+      rdfs:domain :Booking ;
+      rdfs:range xsd:string .
+
+rdfs:comment rdf:type owl:DatatypeProperty ;
+      rdfs:domain owl:Thing ;
+      rdfs:range xsd:string .
+
+schema:dateCreated rdf:type owl:DatatypeProperty ;
+      rdfs:domain owl:Thing ;
+      rdfs:range xsd:dateTime .
+
+schema:dateModified rdf:type owl:DatatypeProperty ;
+      rdfs:domain owl:Thing ;
+      rdfs:range xsd:dateTime .
+
+time:hasBeginning rdf:type owl:DatatypeProperty ;
+      rdfs:domain time:Interval ;
+      rdfs:range xsd:dateTime .
+
+time:hasEnd rdf:type owl:DatatypeProperty ;
+      rdfs:domain time:Interval ;
+      rdfs:range xsd:dateTime .
+
+:attemptsPerYear rdf:type owl:DatatypeProperty ;
+      rdfs:domain :ObligationRule ;
+      rdfs:range xsd:integer .
+
