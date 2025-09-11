@@ -1,6 +1,7 @@
 {
 	"selectedKey": "page1",
 	"navigation": [
+<<<<<<< HEAD
     {
       "title": "Welcome",
       "icon": "sap-icon://home",
@@ -64,4 +65,64 @@
       ]
     }
   ]
+=======
+		{
+			"title": "Welcome",
+			"icon": "sap-icon://home",
+			"key": "page1",
+			"visible": true
+		},
+		{
+			"title": "Digital Concierge​ Search",
+			"icon": "sap-icon://citizen-connect",
+			"key": "page2",
+			"visible": true
+		},
+		{
+			"title": "Knowledge Base",
+			"icon": "sap-icon://activity-items",
+			"key": "page3",
+			"visible": true
+		},
+		{
+			"title": "Digital Concierge​ Explorer",
+			"icon": "sap-icon://explorer",
+			"enabled": true,
+			"visible": true,
+			"expanded": true,
+			"items": [
+				{
+					"title": "Knowledge Graph Discovery",
+					"key": "page6"
+				},
+				{
+					"title": "SPARQL Explorer",
+					"key": "page8"
+				},
+				{
+					"title": "Enhanced Digital Concierge Search",
+					"key": "page7"
+				}
+				
+			]
+		},
+		{
+			"title": "Manager Cockpit",
+			"icon": "sap-icon://customer-view",
+			"enabled": true,
+			"visible": false,
+			"expanded": true,
+			"items": [
+				{
+					"title": "Cluster Exploration",
+					"key": "page4"
+				},
+				{
+					"title": "Category Management",
+					"key": "page5"
+				}
+			]
+		}
+	]
+>>>>>>> 4d7fa45bc99b02602343e65e5652bc207821fbfa
 }
