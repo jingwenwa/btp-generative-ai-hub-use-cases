@@ -672,29 +672,45 @@ sap.ui.define(
 
     // --- Example Usage ---
     const exampleSqlSelectQuery = `
-    WITH TABLE_KG AS (
-SELECT *
-FROM SPARQL_TABLE('
-prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-prefix : <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology/>
-prefix owl: <http://www.w3.org/2002/07/owl#>
-prefix foaf: <http://xmlns.com/foaf/0.1/>
-prefix xsd: <http://www.w3.org/2001/XMLSchema#>
-SELECT ?partner ?pbcOrderNumber
-FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-rdf-v4>
-FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-inferred-triples-v4>
-WHERE {
-?partner a :SAPPartner .
-?partner :requested ?serviceRequest .
-?serviceRequest :consistsOf ?service .
-?service :hasPBCOrderNumber ?pbcOrderNumber .
-}
-')
-)
-SELECT
-"TABLE_KG".*
-FROM TABLE_KG
+    prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    prefix owl: <http://www.w3.org/2002/07/owl#>
+    
+    CONSTRUCT {?s ?p ?o}
+    FROM <http://www.semanticweb.org/ontologies/2025/advisory-rdf-test>
+    WHERE {
+        {
+            {?p a owl:ObjectProperty .}
+            UNION
+            {?p a owl:DatatypeProperty .}
+            ?p rdfs:domain ?s .
+            ?p rdfs:range ?o .
+            FILTER regex(str(?s), "nsmen-ontology", "i") .
+        }
+        UNION
+        {
+            ?s ?p ?o .
+            FILTER (?p = rdfs:subClassOf) .
+            FILTER regex(str(?s), "nsmen-ontology", "i") .
+        }
+        UNION
+        {
+            ?s ?p ?o .
+            FILTER (?p = rdfs:comment) .
+            FILTER regex(str(?s), "nsmen-ontology", "i") .
+        }
+        UNION
+        {
+            ?s ?p ?o .
+            FILTER (?p = rdf:type) .
+            FILTER regex(str(?s), "nsmen-ontology", "i") .
+            FILTER (!regex(str(?o), "Functional", "i")) .
+            FILTER (!regex(str(?o), "Variable", "i")) .
+            FILTER (!regex(str(?o), "Annotation", "i")) .
+            FILTER (!regex(str(?o), "Ontology", "i")) .
+            FILTER (!regex(str(?o), "Named", "i")) .
+        }
+    } ORDER BY ?p
     `;
     // const exampleSqlSelectQuery = `
     // WITH TABLE_KG AS (
