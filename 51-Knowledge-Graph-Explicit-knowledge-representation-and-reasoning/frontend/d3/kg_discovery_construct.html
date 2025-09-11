@@ -238,9 +238,9 @@
 `prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 prefix owl: <http://www.w3.org/2002/07/owl#>
-
+ 
 CONSTRUCT {?s ?p ?o}
-FROM <http://www.semanticweb.org/ontologies/2025/smart-technical-advisory-ontology-test>
+FROM <http://www.semanticweb.org/ontologies/2025/advisory-rdf-test>
 WHERE {
     {
         {?p a owl:ObjectProperty .}
@@ -248,25 +248,25 @@ WHERE {
         {?p a owl:DatatypeProperty .}
         ?p rdfs:domain ?s .
         ?p rdfs:range ?o .
-        FILTER regex(str(?s), "smart-technical-advisory", "i") .
+        FILTER regex(str(?s), "nsmen-ontology", "i") .
     }
     UNION
     {
         ?s ?p ?o .
         FILTER (?p = rdfs:subClassOf) .
-        FILTER regex(str(?s), "smart-technical-advisory", "i") .
+        FILTER regex(str(?s), "nsmen-ontology", "i") .
     }
     UNION
     {
         ?s ?p ?o .
         FILTER (?p = rdfs:comment) .
-        FILTER regex(str(?s), "smart-technical-advisory", "i") .
+        FILTER regex(str(?s), "nsmen-ontology", "i") .
     }
     UNION
     {
         ?s ?p ?o .
         FILTER (?p = rdf:type) .
-        FILTER regex(str(?s), "smart-technical-advisory", "i") .
+        FILTER regex(str(?s), "nsmen-ontology", "i") .
         FILTER (!regex(str(?o), "Functional", "i")) .
         FILTER (!regex(str(?o), "Variable", "i")) .
         FILTER (!regex(str(?o), "Annotation", "i")) .
