@@ -45,7 +45,7 @@
 			"title": "Manager Cockpit",
 			"icon": "sap-icon://customer-view",
 			"enabled": true,
-			"visible": true,
+			"visible": false,
 			"expanded": true,
 			"items": [
 				{
