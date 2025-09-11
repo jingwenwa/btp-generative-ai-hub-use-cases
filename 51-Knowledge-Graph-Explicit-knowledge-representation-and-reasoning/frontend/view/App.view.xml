@@ -237,7 +237,18 @@
 							<core:Fragment fragmentName="chat.view.FPage8SparqlExplorer" id="FPage8SparqlExplorer" type="XML"/>
                         </content>
                         <footer></footer>
-                    </Page>
+					</Page>
+					<Page id="page9" floatingFooter="false" busy="{ui>/busy}" busyIndicatorDelay="0">
+						<headerContent>
+							<Title text="My Bookings" class="sapUiSmallMargin"/>
+							<ToolbarSpacer />
+							<ToolbarSpacer />
+						</headerContent>
+						<content>
+							<core:Fragment fragmentName="chat.view.FPage9PersonalBookings" id="FPage9PersonalBookings" type="XML"/>
+						</content>
+						<footer></footer>
+					</Page>	
 					<!-- <Page id="page99" floatingFooter="false" busy="{ui>/busy}" busyIndicatorDelay="0">
                         <headerContent>
                             <Title text="SAGenAICity - AskTheCity Chatbot  🤖" class="sapUiSmallMargin"/>

@@ -26,16 +26,9 @@
             title="{projects>topic}"
             type="Active"
             press="onKBListItemPress"
-            number="{projects>project_number}"
-            numberUnit="Request ID"
             >
-            <markers>
-                <ObjectMarker type="Favorite" />
-                <ObjectMarker type="Flagged" />
-            </markers>
             <firstStatus>
                 <ObjectStatus
-                    text="{projects>architect}"
                     state="Success" />
             </firstStatus>
             <ObjectAttribute class="sapMTextWrap" title="Solution" text="{projects>solution}" />

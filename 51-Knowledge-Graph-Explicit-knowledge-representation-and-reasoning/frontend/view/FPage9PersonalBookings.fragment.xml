@@ -1,0 +1,232 @@
+<core:FragmentDefinition
+    xmlns:html="http://www.w3.org/1999/xhtml"
+    xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:tnt="sap.tnt"
+    xmlns:card="sap.f.cards"
+    xmlns:grid="sap.ui.layout.cssgrid"
+    xmlns:core="sap.ui.core"
+    xmlns:suite="sap.suite.ui.commons"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:layout="sap.ui.layout">
+    
+    <ScrollContainer height="100%" vertical="true" horizontal="false">
+        <VBox class="sapUiMediumMargin">
+            
+            <!-- Header Section with Profile -->
+            <f:Card class="sapUiMediumMarginBottom">
+                <f:header>
+                    <card:Header title="Personal Profile" subtitle="SPF Officer Details &amp; IPPT Information"/>
+                </f:header>
+                <f:content>
+                    <VBox class="sapUiMediumMargin">
+                        <HBox>
+                            <!-- Profile Picture -->
+                            <VBox class="sapUiMediumMarginEnd">
+                                <Avatar src="sap-icon://person-placeholder" displaySize="XL" class="sapUiMediumMarginBottom"/>
+                                <tnt:InfoLabel text="Active Duty" colorScheme="8" class="sapUiSmallMarginTop"/>
+                            </VBox>
+                            
+                            <!-- Personal Details -->
+                            <VBox class="sapUiLargeMarginBegin">
+                                <Title text="CPL John Lim Hui Wen" level="H2" class="sapUiSmallMarginBottom"/>
+                                <Text text="Service Number: P12345678B" class="sapUiTinyMarginBottom"/>
+                                <Text text="Department: Community Police" class="sapUiTinyMarginBottom"/>
+                                <Text text="Division: Jurong Police Division" class="sapUiTinyMarginBottom"/>
+                                <Text text="Contact: +65 9234 5678" class="sapUiTinyMarginBottom"/>
+                                <Text text="Email: John.lim@spf.gov.sg" class="sapUiTinyMarginBottom"/>
+                                <Text text="Next IPPT Due: 30 April 2024" class="sapUiTinyMarginBottom"/>
+                                <Text text="Current Grade: Silver" class="sapUiTinyMarginBottom"/>
+                            </VBox>
+                            
+                            <layout:VerticalLayout class="sapUiLargeMarginBegin">
+                                <!-- Action Buttons -->
+                                <Button 
+                                    icon="sap-icon://calendar" 
+                                    press="onBookIPPTPress" 
+                                    text="Book IPPT Session" 
+                                    type="Emphasized"
+                                    class="sapUiMediumMarginBottom"
+                                    width="200px"/>
+                                <Button 
+                                    icon="sap-icon://settings" 
+                                    press="onPreferencesPress" 
+                                    text="Update Preferences" 
+                                    type="Default"
+                                    class="sapUiMediumMarginBottom"
+                                    width="200px"/>
+                                <Button 
+                                    icon="sap-icon://business-card" 
+                                    press="onContactDetailsPress" 
+                                    text="Edit Contact Details" 
+                                    type="Default"
+                                    width="200px"/>
+                            </layout:VerticalLayout>
+                        </HBox>
+                    </VBox>
+                </f:content>
+            </f:Card>
+
+            <!-- Current & Upcoming IPPT Bookings -->
+            <f:Card class="sapUiMediumMarginBottom">
+                <f:header>
+                    <card:Header title="Current &amp; Upcoming IPPT Sessions" subtitle="Your Scheduled IPPT Tests"/>
+                </f:header>
+                <f:content>
+                    <Table items="{/currentBookings}" class="sapUiResponsiveMargin">
+                        <columns>
+                            <Column width="3rem">
+                                <Text text=""/>
+                            </Column>
+                            <Column>
+                                <Text text="Location"/>
+                            </Column>
+                            <Column>
+                                <Text text="Date &amp; Time"/>
+                            </Column>
+                            <Column>
+                                <Text text="Status"/>
+                            </Column>
+                            <Column>
+                                <Text text="Actions"/>
+                            </Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <core:Icon src="sap-icon://workout" color="Default"/>
+                                    <VBox>
+                                        <Title text="Home Team Academy" level="H4"/>
+                                        <Text text="IPPT Centre, Level 2"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Text text="15 March 2024"/>
+                                        <Text text="2:00 PM - 4:00 PM" class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <ObjectStatus text="Confirmed" state="Success"/>
+                                    <HBox>
+                                        <Button text="Reschedule" type="Transparent" icon="sap-icon://edit"/>
+                                        <Button text="Cancel" type="Transparent" icon="sap-icon://decline"/>
+                                    </HBox>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </f:content>
+            </f:Card>
+
+            <!-- IPPT History -->
+            <f:Card>
+                <f:header>
+                    <card:Header title="IPPT History" subtitle="Past IPPT results and performance tracking"/>
+                </f:header>
+                <f:content>
+                    <Table items="{/ipptHistory}" class="sapUiResponsiveMargin">
+                        <columns>
+                            <Column width="3rem">
+                                <Text text=""/>
+                            </Column>
+                            <Column>
+                                <Text text="Location"/>
+                            </Column>
+                            <Column>
+                                <Text text="Date"/>
+                            </Column>
+                            <Column>
+                                <Text text="Push Ups"/>
+                            </Column>
+                            <Column>
+                                <Text text="Sit Ups"/>
+                            </Column>
+                            <Column>
+                                <Text text="2.4km Run"/>
+                            </Column>
+                            <Column>
+                                <Text text="Total Score"/>
+                            </Column>
+                            <Column>
+                                <Text text="Grade"/>
+                            </Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <core:Icon src="sap-icon://history" color="Default"/>
+                                    <VBox>
+                                        <Title text="Home Team Academy" level="H4"/>
+                                        <Text text="IPPT Centre, Level 2"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Text text="20 Oct 2023"/>
+                                        <Text text="Annual IPPT" class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <Text text="42 reps"/>
+                                    <Text text="45 reps"/>
+                                    <Text text="11:45"/>
+                                    <ObjectNumber number="78" unit="pts" state="Good"/>
+                                    <ObjectStatus text="Silver" state="Success"/>
+                                </cells>
+                            </ColumnListItem>
+                            <ColumnListItem>
+                                <cells>
+                                    <core:Icon src="sap-icon://history" color="Default"/>
+                                    <VBox>
+                                        <Title text="Clementi CC" level="H4"/>
+                                        <Text text="Fitness Centre"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Text text="15 Apr 2023"/>
+                                        <Text text="Annual IPPT" class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <Text text="38 reps"/>
+                                    <Text text="40 reps"/>
+                                    <Text text="12:30"/>
+                                    <ObjectNumber number="68" unit="pts" state="Good"/>
+                                    <ObjectStatus text="Silver" state="Success"/>
+                                </cells>
+                            </ColumnListItem>
+                            <ColumnListItem>
+                                <cells>
+                                    <core:Icon src="sap-icon://history" color="Default"/>
+                                    <VBox>
+                                        <Title text="Bedok Sports Complex" level="H4"/>
+                                        <Text text="Gym Level 3"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Text text="25 Sep 2022"/>
+                                        <Text text="Annual IPPT" class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <Text text="35 reps"/>
+                                    <Text text="38 reps"/>
+                                    <Text text="13:15"/>
+                                    <ObjectNumber number="61" unit="pts" state="Warning"/>
+                                    <ObjectStatus text="Pass" state="Warning"/>
+                                </cells>
+                            </ColumnListItem>
+                            <ColumnListItem>
+                                <cells>
+                                    <core:Icon src="sap-icon://history" color="Default"/>
+                                    <VBox>
+                                        <Title text="Toa Payoh Sports Hall" level="H4"/>
+                                        <Text text="Fitness Centre"/>
+                                    </VBox>
+                                    <VBox>
+                                        <Text text="10 Aug 2021"/>
+                                        <Text text="Annual IPPT" class="sapUiTinyMarginTop"/>
+                                    </VBox>
+                                    <Text text="40 reps"/>
+                                    <Text text="42 reps"/>
+                                    <Text text="12:00"/>
+                                    <ObjectNumber number="75" unit="pts" state="Good"/>
+                                    <ObjectStatus text="Silver" state="Success"/>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </f:content>
+            </f:Card>
+
+        </VBox>
+    </ScrollContainer>
+</core:FragmentDefinition>
