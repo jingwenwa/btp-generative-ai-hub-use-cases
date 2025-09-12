@@ -413,7 +413,6 @@ def get_nsman_mapped():
             "RANK_CODE",
             "MEANING",
             "BIRTHDAY",
-            "NEXT_IPPT_DUE",
             "CURRENT_GRADE"
         FROM {schema_name}.MHA_NSMAN_MAPPED
         WHERE "NSMAN_ID" = '{nsman_id}'
@@ -431,7 +430,6 @@ def get_nsman_mapped():
             "PES Status": row["PES_STATUS_ID"],
             "Rank Code": row["RANK_CODE"],
             "Birthday": row["BIRTHDAY"],
-            "Next IPPT Due": row["NEXT_IPPT_DUE"],
             "Current Grade": row["CURRENT_GRADE"]
         })
 
