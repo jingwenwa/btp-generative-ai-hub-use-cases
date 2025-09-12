@@ -1,0 +1,110 @@
+{"HGBT_Classifier": {"ITER_NUM": [
+            100
+        ], "MAX_DEPTH": {"range": [
+                1,
+                1,
+                11
+            ]
+        }, "ETA": [
+            0.01,
+            0.1,
+            0.5
+        ], "NODE_SIZE": {"range": [
+                1,
+                1,
+                21
+            ]
+        }
+    }, "MLP_Classifier": {"ACTIVATION": [
+            13
+        ], "OUTPUT_ACTIVATION": [
+            2
+        ], "HIDDEN_LAYER_SIZE": [
+           "100"
+        ], "TRAINING_STYLE": [
+            0
+        ], "NORMALIZATION": [
+            1
+        ], "WEIGHT_INIT": [
+            1
+        ], "MAX_ITER":[
+            200
+        ]
+    }, "M_LOGR_Classifier": {"MAX_ITERATION": [
+            100
+        ], "ENET_ALPHA": [
+            0.0,
+            1.0
+        ], "ENET_LAMBDA": [
+            0.01,
+            0.1
+        ]
+    }, "NB_Classifier": {"LAPLACE": [
+            0.001,
+            0.01,
+            0.1,
+            1.0,
+            10.0,
+            100.0
+        ]
+    }, "RDT_Classifier": {"TREES_NUM": [
+            20
+        ], "NODE_SIZE": {"range": [
+                1,
+                1,
+                21
+            ]
+        }, "CALCULATE_OOB": [
+            0
+        ], "SAMPLE_FRACTION": [
+            0.75,
+            1.0
+        ]
+    }, "DT_Classifier": {"ALGORITHM": [
+            1,
+            2,
+            3
+        ], "MAX_DEPTH": {"range": [
+                1,
+                1,
+                11
+            ]
+        }, "MIN_RECORDS_OF_PARENT": {"range": [
+                2,
+                1,
+                21
+            ]
+        }, "MIN_RECORDS_OF_LEAF": {"range": [
+                1,
+                1,
+                21
+            ]
+        }
+    },
+    "Imputer": {
+        "IMPUTATION_TYPE": [
+            1,
+            2,
+            3
+        ]
+    }, "SAMPLING": {"SAMPLING_METHOD": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+        ], "PERCENTAGE": {"range": [
+                0.1,
+                0.1,
+                0.9
+            ]
+        }, "INTERVAL": {"range": [
+                2,
+                1,
+                10
+            ]
+        }
+    }
+}

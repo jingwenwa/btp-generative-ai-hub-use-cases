@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+
+    {% block styles %}
+    <style>
+      {% include "automl_config.css" %}
+    </style>
+    {% endblock %}
+
+    <script>
+      window.routerBase = "./";
+      const frameId = '{{ frameId }}';
+      window['frameId'] = frameId;
+      const OperatorMetadata = {{ operator_metadata }};
+      const ParameterMetadata = {{ parameter_metadata }};
+      const InputConfig = JSON.parse('{{ input_config_str }}');
+      const ConfigTemplateDict = JSON.parse('{{ config_template_dict_str }}');
+
+      const IframeId = frameId;
+      const UIType = "AutoMLConfigUI";
+      const RedirectedCommServer = 'https://' + window.location.hostname + window.location.pathname.replace('/page', '');
+      let CommServer = '{{ comm_server }}';
+      CommServer = RedirectedCommServer;
+      const FetchInterval = 10;
+
+      const utils_ajax = function (url, settings) {
+          return $.ajax(url, settings);
+      };
+    </script>
+
+  </head>
+  <body>
+    <div id="root"></div>
+
+    {% block javascript %}
+    <script type="text/javascript">
+      {% include "jQuery.js" %}
+    </script>
+
+    <script>
+      {% include "automl_config.js" %}
+    </script>
+    {% endblock %}
+  </body>
+</html>

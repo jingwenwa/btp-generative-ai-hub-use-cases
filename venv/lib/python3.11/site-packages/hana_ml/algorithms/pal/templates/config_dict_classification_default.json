@@ -1,0 +1,200 @@
+{"LabelEncoder": {"IGNORE_UNKNOWN": [
+            1
+        ]
+    }, "OneHotEncoder": {"MINIMUM_FRACTION": [
+            0.05,
+            0.1,
+            0.15,
+            0.2,
+            0.25
+        ], "IGNORE_UNKNOWN": [
+            1
+        ]
+    },
+    "Imputer": {
+        "IMPUTATION_TYPE": [
+            1,
+            2,
+            3
+        ]
+    }, "PolynomialFeatures": {"MIN_DEGREE": [
+            1
+        ], "MAX_DEGREE": [
+            2
+        ], "INTERACTION_ONLY": [
+            false
+        ], "INCLUDE_BIAS": [
+            false
+        ]
+    }, "CATPCA": {"COMPONENTS_PERCENTAGE": [
+            0.1,
+            0.2,
+            0.5,
+            0.7,
+            1.0
+        ], "SCALING": [
+            1
+        ], "COMPONENT_TOL": [
+            0.0
+        ], "MAX_ITERATION": [
+            100
+        ], "CONVERGE_TOL": [
+            0.0001
+        ], "LANCZOS_ITERATION": [
+            100
+        ], "SVD_CALCULATOR": [
+            0
+        ]
+    }, "FS_supervised": {"FS_METHOD": [
+            3
+        ], "TOP_K_BEST": [
+            10
+        ]
+    }
+    , "HGBT_Classifier": {  "ITER_NUM": [10, 100], 
+                            "ETA": [0.1, 0.3], 
+                            "MIN_CHILD_HESSIAN": [1.0],
+                            "MAX_DEPTH": [4, 10],
+                            "REPLACE_MISSING": [0],
+                            "FEATURE_GROUPING": [0],
+                            "CALCULATE_IMPORTANCE": [0], "CALCULATE_CONFUSION_MATRIX": [0]
+    }, "MLP_Classifier": {
+        "ACTIVATION": [
+            13
+        ], "OUTPUT_ACTIVATION": [
+            2
+        ], "HIDDEN_LAYER_SIZE": [
+            "100"
+        ], "TRAINING_STYLE": [
+            0
+        ], "NORMALIZATION": [
+            1
+        ], "WEIGHT_INIT": [
+            1
+        ],"MAX_ITER": [
+            100, 200, 500, 1000
+        ]
+    }, "M_LOGR_Classifier": {"MAX_ITERATION": [
+            100
+        ], "ENET_ALPHA": [
+            0.0,
+            1.0
+        ], "ENET_LAMBDA": [
+            0.0001,
+            0.001,
+            0.01,
+            0.1,
+            1.0,
+            5.0,
+            10.0
+        ]
+    }, "NB_Classifier": {"LAPLACE": [
+            0.001,
+            0.01,
+            0.1,
+            1.0,
+            10.0,
+            100.0
+        ]
+    }, "RDT_Classifier": {"TREES_NUM": [
+            100
+        ], "NODE_SIZE": {"range": [
+                1,
+                1,
+                6
+            ]
+        }, "CALCULATE_OOB": [
+            0
+        ], "SAMPLE_FRACTION": [
+            0.75,
+            1.0
+        ], "MAX_DEPTH": [
+            4,
+            10
+        ]
+    }, "SCALE": {"SCALING_METHOD": [
+            0,
+            1,
+            2
+        ], "NEW_MIN": {"range": [
+                0.0,
+                1.0,
+                4.0
+            ]
+        }, "NEW_RANGE": [
+            1.0,
+            2.0,
+            3.0
+        ], "Z-SCORE_METHOD": [
+            0,
+            1,
+            2
+        ]
+    }, "DT_Classifier": {"ALGORITHM": [
+            1,
+            2,
+            3
+        ], "MAX_DEPTH": {"range": [
+                1,
+                1,
+                11
+            ]
+        }, "MIN_RECORDS_OF_PARENT": {"range": [
+                2,
+                1,
+                10
+            ]
+        }, "MIN_RECORDS_OF_LEAF": {"range": [
+                1,
+                1,
+                10
+            ]
+        }
+    }, "SAMPLING": {"SAMPLING_METHOD": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+        ], "PERCENTAGE": {"range": [
+                0.1,
+                0.1,
+                0.9
+            ]
+        }, "INTERVAL": {"range": [
+                2,
+                1,
+                10
+            ]
+        }
+    }, "SMOTE": {"K_NEAREST_NEIGHBOURS": [
+            1,
+            3
+        ], "METHOD": [
+            1
+        ]
+    }, "SMOTETomek": {"K_NEAREST_NEIGHBOURS": [
+            1,
+            3
+        ], "METHOD": [
+            1
+        ], "SAMPLING_STRATEGY": [
+            0,
+            1,
+            2,
+            3
+        ]
+    }, "TomekLinks": {"SAMPLING_STRATEGY": [
+            0,
+            1,
+            2,
+            3
+        ], "DISTANCE_LEVEL": [
+            2
+        ], "METHOD": [
+            1
+        ]
+    }
+}

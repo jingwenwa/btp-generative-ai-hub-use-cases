@@ -1,0 +1,123 @@
+{"FS_supervised": {"FS_METHOD": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ], "TOP_K_BEST": [
+            30
+        ]
+    }, "GLM_Regressor": {"SOLVER": ["irls", "cd"
+        ], "FAMILY": ["gaussian", "poisson", "gamma", "inversegaussian"
+        ], "LINK": ["identity", "log"
+        ], "ENET_LAMBDA": {"range": [
+                0.0,
+                0.1,
+                1.0
+            ]
+        }
+    }, "HGBT_Regressor": {"ITER_NUM": [
+            100
+        ], "OBJ_FUNC": [
+            0,
+            1,
+            2
+        ], "ETA": [
+            0.001,
+            0.01,
+            0.1,
+            0.5,
+            1.0
+        ], "MAX_DEPTH": {"range": [
+                1,
+                1,
+                11
+            ]
+        }, "MIN_CHILD_HESSIAN": {"range": [
+                1.0,
+                1.0,
+                21.0
+            ]
+        }
+    }, "MLP_Regressor": {"ACTIVATION": [
+            13
+        ], "OUTPUT_ACTIVATION": [
+            2
+        ], "HIDDEN_LAYER_SIZE": [
+            "100"
+        ], "TRAINING_STYLE": [
+            0
+        ], "NORMALIZATION": [
+            1
+        ], "WEIGHT_INIT": [
+            1
+        ], "MAX_ITER": [
+            200
+        ]
+    }, "MLR_Regressor": {"ALG": [
+            2,
+            4
+        ], "MAX_ITERATION": [
+            100000
+        ], "THRESHOLD": [
+            1e-07,
+            1e-05,
+            0.001
+        ], "ENET_LAMBDA": [
+            0.001,
+            0.01,
+            0.1,
+            1.0,
+            5.0,
+            10.0
+        ], "ENET_ALPHA": {"range": [
+                0.0,
+                0.05,
+                1.0
+            ]
+        }
+    }, "RDT_Regressor": {"TREES_NUM": [
+            20
+        ], "NODE_SIZE": {"range": [
+                1,
+                1,
+                21
+            ]
+        }, "SPLIT_THRESHOLD": [
+            1e-09
+        ], "CALCULATE_OOB": [
+            0
+        ], "SAMPLE_FRACTION": [
+            0.75,
+            1.0
+        ]
+    }, "DT_Regressor": {"ALGORITHM": [
+            3
+        ], "MAX_DEPTH": {"range": [
+                1,
+                1,
+                11
+            ]
+        }, "MIN_RECORDS_OF_PARENT": {"range": [
+                2,
+                1,
+                21
+            ]
+        }, "MIN_RECORDS_OF_LEAF": {"range": [
+                1,
+                1,
+                21
+            ]
+        }
+    },
+    "Imputer": {
+        "IMPUTATION_TYPE": [
+            1,
+            2,
+            3
+        ]
+    }
+}

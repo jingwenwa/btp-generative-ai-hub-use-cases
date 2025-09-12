@@ -1,0 +1,3 @@
+[console_scripts]
+sql-formatter = sql_formatter.format_file:format_sql_files_cli
+

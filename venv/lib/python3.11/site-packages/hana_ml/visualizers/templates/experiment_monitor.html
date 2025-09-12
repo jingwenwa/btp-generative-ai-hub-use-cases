@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+
+    {% block styles %}
+    <style>
+      {% include "experiment_monitor.css" %}
+    </style>
+    {% endblock %}
+
+    <script>
+      window.routerBase = "./";
+      const WillBeBindedProperty = '{{ will_be_binded_property }}';
+      const ExperimentSplitter = '{{ experiment_splitter }}';
+      const IframeId = '{{ iframe_id }}';
+      const LeftSectionWidth = 200;
+      window['iframeId'] = IframeId;
+      const RuntimePlatform = '{{ runtime_platform }}';
+
+      // on databricks ->
+      const UIType = "ExperimentMonitorUI";
+      const RedirectedCommServer = 'https://' + window.location.hostname + window.location.pathname.replace('/page', '');
+      let CommServer = '{{ comm_server }}';
+      CommServer = RedirectedCommServer;
+      const FetchInterval = 1;
+      // <--
+
+      function sendAjax(url, settings) {
+        return $.ajax(url, settings);
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    {% block javascript %}
+    <script type="text/javascript">
+      {% include "jQuery.js" %}
+    </script>
+
+    <script type="text/javascript">
+      {% include "experiment_monitor.js" %}
+    </script>
+
+    <script>
+      window[WillBeBindedProperty] = {{ msgs_str }};
+    </script>
+    {% endblock %}
+  </body>
+</html>

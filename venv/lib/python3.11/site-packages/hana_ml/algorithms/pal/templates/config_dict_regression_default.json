@@ -1,0 +1,260 @@
+{
+    "LabelEncoder": {
+        "IGNORE_UNKNOWN": [
+            1
+        ]
+    },
+    "OneHotEncoder": {
+        "MINIMUM_FRACTION": [
+            0.05,
+            0.1,
+            0.15,
+            0.2,
+            0.25
+        ],
+        "IGNORE_UNKNOWN": [
+            1
+        ]
+    },
+    "Imputer": {
+        "IMPUTATION_TYPE": [
+            1,
+            2,
+            3
+        ]
+    },
+    "PolynomialFeatures": {
+        "MIN_DEGREE": [
+            1
+        ],
+        "MAX_DEGREE": [
+            2
+        ],
+        "INTERACTION_ONLY": [
+            false
+        ],
+        "INCLUDE_BIAS": [
+            false
+        ]
+    },
+    "CATPCA": {
+        "COMPONENTS_PERCENTAGE": [
+            0.1,
+            0.2,
+            0.5,
+            0.7,
+            1.0
+        ],
+        "SCALING": [
+            1
+        ],
+        "COMPONENT_TOL": [
+            0.0
+        ],
+        "MAX_ITERATION": [
+            100
+        ],
+        "CONVERGE_TOL": [
+            1e-04
+        ],
+        "LANCZOS_ITERATION": [
+            100
+        ],
+        "SVD_CALCULATOR": [
+            0
+        ]
+    },
+    "FS_supervised": {
+        "FS_METHOD": [
+            3
+        ],
+        "TOP_K_BEST": [
+            5,
+            10,
+            15,
+            20
+        ]
+    },
+    "HGBT_Regressor": {
+        "ITER_NUM": [
+            100
+        ],
+        "OBJ_FUNC": [
+            0
+        ],
+        "ETA": [
+            0.001,
+            0.01,
+            0.1,
+            0.5,
+            1.0
+        ],
+        "MAX_DEPTH": {
+            "range": [
+                1,
+                1,
+                11
+            ]
+        },
+        "MIN_CHILD_HESSIAN": {
+            "range": [
+                1.0,
+                1.0,
+                10.0
+            ]
+        },
+        "NODE_SIZE": {
+            "range": [
+                5,
+                1,
+                10
+            ]
+        }
+    },
+    "MLP_Regressor": {
+        "ACTIVATION": [
+            13
+        ], "OUTPUT_ACTIVATION": [
+            2
+        ], "HIDDEN_LAYER_SIZE": [
+            "100"
+        ], "TRAINING_STYLE": [
+            0
+        ], "NORMALIZATION": [
+            1
+        ], "WEIGHT_INIT": [
+            1
+        ], "MAX_ITER": [
+            100, 200, 500, 1000
+        ]
+    },
+    "MLR_Regressor": {
+        "ALG": [
+            2,
+            4
+        ],
+        "MAX_ITERATION": [
+            100
+        ],
+        "THRESHOLD": [
+            1e-04,
+            1e-03,
+            0.01
+        ],
+        "ENET_LAMBDA": [
+            0.01,
+            0.1,
+            1.0,
+            5.0,
+            10.0
+        ],
+        "ENET_ALPHA": {
+            "range": [
+                0.0,
+                0.05,
+                1.0
+            ]
+        }
+    },
+    "RDT_Regressor": {
+        "TREES_NUM": [
+            100
+        ],
+        "NODE_SIZE": {
+            "range": [
+                5,
+                1,
+                10
+            ]
+        },
+        "CALCULATE_OOB": [
+            0
+        ],
+        "SAMPLE_FRACTION": [
+            0.75,
+            1.0
+        ],
+        "MAX_DEPTH": [
+            4,
+            10
+        ],
+        "SPLIT_THRESHOLD": [
+            1e-9
+        ]
+    },
+    "DT_Regressor": {
+        "ALGORITHM": [
+            3
+        ],
+        "MAX_DEPTH": {
+            "range": [
+                1,
+                1,
+                11
+            ]
+        },
+        "MIN_RECORDS_OF_PARENT": {
+            "range": [
+                2,
+                1,
+                10
+            ]
+        },
+        "MIN_RECORDS_OF_LEAF": {
+            "range": [
+                1,
+                1,
+                10
+            ]
+        }
+    },
+    "SAMPLING": {
+        "SAMPLING_METHOD": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+        ],
+        "PERCENTAGE": {
+            "range": [
+                0.1,
+                0.1,
+                0.9
+            ]
+        },
+        "INTERVAL": {
+            "range": [
+                2,
+                1,
+                10
+            ]
+        }
+    },
+    "SCALE": {
+        "SCALING_METHOD": [
+            0,
+            1,
+            2
+        ],
+        "NEW_MIN": {
+            "range": [
+                0.0,
+                1.0,
+                4.0
+            ]
+        },
+        "NEW_RANGE": [
+            1.0,
+            2.0,
+            3.0
+        ],
+        "Z-SCORE_METHOD": [
+            0,
+            1,
+            2
+        ]
+    }
+}
