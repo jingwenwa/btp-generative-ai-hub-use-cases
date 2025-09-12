@@ -1,0 +1,33 @@
+{
+    "DatasetAnalysis": [
+        {
+            "name": "Stationarity",
+            "items": [{"stationarity_item": {}}]
+        },
+        {
+            "name": "Partial Autocorrelation",
+            "items": [{"pacf_item": {}}]
+        },
+        {
+            "name": "Rolling Mean and Standard Deviation",
+            "items": [
+                {"moving_average_item": {"rolling_window": -3}},
+                {"rolling_stddev_item": {"rolling_window": 10}}
+            ]
+        },
+        {
+            "name": "Seasonality",
+            "items": [
+                {"real_item": {}},
+                {"seasonal_decompose_items": {}}
+            ]
+        },
+        {
+            "name": "Outlier and Changepoints",
+            "items": [
+                {"outlier_item": {}},
+                {"change_points_item": {"cp_object": "BCPD(max_tcp=5, max_scp=5, max_harmonic_order =10, random_seed=1, max_iter=5000)"}}
+            ]
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Fullscreen</title>
+    <script>
+        const TargetIframeId = '{{ iframe_id }}';
+        function enterFullscreen() {const PageDocument = window.parent.document;let TargetIframe = PageDocument.getElementById(TargetIframeId);if(TargetIframe){TargetIframe.requestFullscreen();}}
+    </script>
+</head>
+
+<body>
+    <button onclick="enterFullscreen()" style="float: right;">Enter Fullscreen</button>
+</body>
+
+</html>

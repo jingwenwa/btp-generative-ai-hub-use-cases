@@ -1,0 +1,3 @@
+[console_scripts]
+aicore=ai_core_sdk.cli:cli [aicore]
+

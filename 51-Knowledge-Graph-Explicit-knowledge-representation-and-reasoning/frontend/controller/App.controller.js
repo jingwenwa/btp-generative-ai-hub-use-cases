@@ -2601,8 +2601,7 @@ sap.ui.define(
           const oGridList1 = this.getView().byId(
             this.createId("FPage2AdvisoryBuddy--gridList")
           );
-          if (oGridList1)
-            oGridList1.setHeaderText("Your Query: " + cleanValue);
+          if (oGridList1) oGridList1.setHeaderText("Your Query: " + cleanValue);
 
           // 5) Call backend
           const myHeaders = new Headers();
@@ -3815,6 +3814,11 @@ sap.ui.define(
       onCatMgmtPress: function (oEvent) {
         this.byId("pageContainer").to(this.getView().createId("page5"));
         this.byId("sideNavigation").setSelectedKey("page5");
+      },
+
+      onPersonalBookingsPress: function (oEvent) {
+        this.byId("pageContainer").to(this.getView().createId("page9"));
+        this.byId("sideNavigation").setSelectedKey("page9");
       },
 
       onNavItemSelect: function (oEvent) {

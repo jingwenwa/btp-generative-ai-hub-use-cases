@@ -1,15 +1,21 @@
-import os
-import configparser
-
-from datetime import datetime
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from hana_ml import dataframe
-
 import math
 import pandas as pd
 import numpy as np
 import re
+
+import os
+import configparser
+from pathlib import Path
+
+from datetime import datetime
+from flask import Flask, request, jsonify, json, Response
+from flask_cors import CORS
+from hana_ml import dataframe
+from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from sql_formatter.core import format_sql
+from gen_ai_hub.proxy.langchain.openai import ChatOpenAI
+from gen_ai_hub.proxy.core.proxy_clients import get_proxy_client
 
 def nan_to_null(df):
     """Convert all NaN or NaT in a DataFrame to None for JSON serialization."""
@@ -37,6 +43,10 @@ else:
 
 # Step 1: Establish a connection to SAP HANA
 connection = dataframe.ConnectionContext(hanaURL, hanaPort, hanaUser, hanaPW)
+
+# Initialize LLM once
+proxy_client = get_proxy_client('gen-ai-hub')
+llm = ChatOpenAI(proxy_model_name='gpt-5', temperature=0, proxy_client=proxy_client)
 
 app = Flask(__name__)
 CORS(app)
@@ -256,94 +266,176 @@ def get_advisories_by_expert_and_category():
     results = advisories_by_category.to_dict(orient='records')
     return jsonify({"advisories_by_category": results}), 200
 
-import re
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
 @app.route('/compare_text_to_existing', methods=['POST'])
 def compare_text_to_existing():
-    data = request.get_json()
-    schema_name = data.get('schema_name', 'DBUSER')
-    query_text = data.get('query_text', '')
+    try:
+        data = request.get_json()
+        schema_name = data.get('schema_name', 'DBUSER')
+        query_text = data.get('query_text', '')
 
-    if not query_text:
-        return jsonify({"error": "query_text is required"}), 400
+        if not query_text:
+            return jsonify({"error": "query_text is required"}), 400
 
-    similarities = []
+        similarities = []
 
-    # --- Extract NSMAN_ID ---
-    nsman_match = re.search(r'ID\s*=\s*(\d+)', query_text, re.IGNORECASE)
-    nsman_id = nsman_match.group(1) if nsman_match else None
-    if not nsman_id:
-        return jsonify({"error": "NSMAN_ID not found in query_text"}), 400
+        # --- Use LM to extract NSMAN_ID, LOCATION_NAME, SLOT_DATE ---
+        prompt_template = PromptTemplate(
+            input_variables=["query_text"],
+            template="""
+                    You are an AI assistant for extracting booking information from user queries.
 
-    # --- Extract LOCATION_NAME (improved regex) ---
-    loc_match = re.search(
-        r'I want to book a slot\.\s*([A-Za-z0-9\s&\-]+)',
-        query_text,
-        re.IGNORECASE
-    )
-    location_name = loc_match.group(1).strip() if loc_match else None
+                    From the following query, extract:
+                    - NSMAN_ID (numeric string)
+                    - LOCATION_NAME (or null if not mentioned)
+                    - SLOT_DATE in YYYY-MM-DD format (or null if not mentioned)
 
-    # --- Extract SLOT_DATE ---
-    date_match = re.search(r'(\d{4}-\d{2}-\d{2})', query_text)
-    slot_date = date_match.group(1) if date_match else None
+                    Return strictly JSON in this format:
 
-    # --- Case 1: If location_name is detected, query BOOKINGS_AVAILABILITY ---
-    if location_name:
-        slot_query = f"""
-            SELECT "LOCATION_NAME", "SLOT_DATE", "SLOT_TIME"
-            FROM {schema_name}.BOOKINGS_AVAILABILITY
-            WHERE UPPER("LOCATION_NAME") = UPPER('{location_name}')
-        """
+                    {{
+                    "nsman_id": "...",
+                    "location_name": "...",
+                    "slot_date": "..."
+                    }}
 
-        if slot_date:
-            slot_query += f""" AND "SLOT_DATE" = '{slot_date}' """
+                    User query: "{query_text}"
+                    """
+        )
 
-        slot_query += """
-            ORDER BY "SLOT_DATE" DESC, "SLOT_TIME" DESC
-            LIMIT 3
-        """
+        chain = prompt_template | llm
+        response = chain.invoke({"query_text": query_text})
 
-        slot_df = dataframe.DataFrame(connection, slot_query)
-        slots = slot_df.collect().to_dict(orient='records')
+        try:
+            extraction = json.loads(response.content)
+            nsman_id = extraction.get("nsman_id")
+            location_name = extraction.get("location_name")
+            slot_date = extraction.get("slot_date")
+        except Exception:
+            return jsonify({"error": "Failed to parse LM extraction"}), 400
 
-        solution_vals = [
-            f"{slot['LOCATION_NAME']} | {slot['SLOT_DATE']} | {slot['SLOT_TIME']}" 
-            for slot in slots
-        ]
+        if not nsman_id:
+            return jsonify({"error": "NSMAN_ID not found"}), 400
 
-        similarities.append({
-            "NSMAN_ID": nsman_id,
-            "SIMILARITY": "1",
-            "SOLUTION": solution_vals[0] if len(solution_vals) > 0 else None,
-            "SOLUTION_TWO": solution_vals[1] if len(solution_vals) > 1 else None,
-            "SOLUTION_THREE": solution_vals[2] if len(solution_vals) > 2 else None,
-        })
+        # --- Case 1: If location_name detected, query BOOKINGS_AVAILABILITY ---
+        if location_name:
+            slot_query = f"""
+                SELECT "LOCATION_NAME", "SLOT_DATE", "SLOT_TIME"
+                FROM {schema_name}.BOOKINGS_AVAILABILITY
+                WHERE UPPER("LOCATION_NAME") = UPPER('{location_name}')
+            """
+            if slot_date:
+                slot_query += f""" AND "SLOT_DATE" = '{slot_date}' """
+            slot_query += """
+                ORDER BY "SLOT_DATE" DESC, "SLOT_TIME" DESC
+                LIMIT 3
+            """
+            slot_df = dataframe.DataFrame(connection, slot_query)
+            slots = slot_df.collect().to_dict(orient='records')
 
-    # --- Case 2: No location_name → fallback to advisory table ---
-    else:
-        sql_query = f"""
-            SELECT "SOLUTION",
-                   "SOLUTION_TWO",
-                   "SOLUTION_THREE"
-            FROM {schema_name}.MHA_ADVISORIES4
-            WHERE "NSMAN_ID" = '{nsman_id}'
-            LIMIT 3
-        """
-        hana_df = dataframe.DataFrame(connection, sql_query)
-        solutions = hana_df.collect().to_dict(orient='records')
-        for sol in solutions:
+            solution_vals = [
+                f"{slot['LOCATION_NAME']} | {slot['SLOT_DATE']} | {slot['SLOT_TIME']}" 
+                for slot in slots
+            ]
+
             similarities.append({
                 "NSMAN_ID": nsman_id,
-                "SIMILARITY": "1",
-                "SOLUTION": sol["SOLUTION"],
-                "SOLUTION_TWO": sol["SOLUTION_TWO"],
-                "SOLUTION_THREE": sol["SOLUTION_THREE"]
+                "SOLUTION": solution_vals[0] if len(solution_vals) > 0 else None,
+                "SOLUTION_TWO": solution_vals[1] if len(solution_vals) > 1 else None,
+                "SOLUTION_THREE": solution_vals[2] if len(solution_vals) > 2 else None,
             })
 
-    return jsonify({"similarities": similarities}), 200
+        # --- Case 2: No location_name → fallback to advisory table ---
+        else:
+            sql_query = f"""
+                SELECT "SOLUTION",
+                       "SOLUTION_TWO",
+                       "SOLUTION_THREE"
+                FROM {schema_name}.MHA_ADVISORIES4
+                WHERE "NSMAN_ID" = '{nsman_id}'
+                LIMIT 3
+            """
+            hana_df = dataframe.DataFrame(connection, sql_query)
+            solutions = hana_df.collect().to_dict(orient='records')
+            for sol in solutions:
+                similarities.append({
+                    "NSMAN_ID": nsman_id,
+                    "SOLUTION": sol.get("SOLUTION"),
+                    "SOLUTION_TWO": sol.get("SOLUTION_TWO"),
+                    "SOLUTION_THREE": sol.get("SOLUTION_THREE")
+                })
+
+        return jsonify({"similarities": similarities}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/get_ippt_history', methods=['POST'])
+def get_ippt_history():
+    schema_name = request.args.get('schema_name', 'DBUSER')   # default schema
+
+    # Get NSMAN_ID from request body
+    data = request.get_json(silent=True) or {}
+    nsman_id = data.get("NSMAN_ID")
+
+    if not nsman_id:
+        return jsonify({"error": "NSMAN_ID is required in request body"}), 400
+
+    # Build SQL query safely
+    sql_query = f'SELECT * FROM {schema_name}.MHA_IPPT_HISTORY'
+    if nsman_id.isdigit():
+        sql_query += f' WHERE "NSMAN_ID" = {nsman_id}'
+    else:
+        sql_query += f' WHERE "NSMAN_ID" = \'{nsman_id}\''
+
+    hana_df = dataframe.DataFrame(connection, sql_query)
+    ippt_history_df = hana_df.collect()
+
+    # Convert NaN → None for JSON
+    ippt_history_df = nan_to_null(ippt_history_df)
+
+    results = ippt_history_df.to_dict(orient='records')
+    return jsonify({"ippt_history": results}), 200
+
+@app.route('/get_nsman_mapped', methods=['POST'])
+def get_nsman_mapped():
+    schema_name = request.args.get('schema_name', 'DBUSER')
+    data = request.get_json(silent=True) or {}
+
+    nsman_id = data.get("NSMAN_ID")
+    if not nsman_id:
+        return jsonify({"error": "NSMAN_ID is required in request body"}), 400
+
+    sql_query = f"""
+        SELECT 
+            "NSMAN_ID",
+            "NAME",
+            "EMAIL",
+            "PES_STATUS_ID",
+            "RANK_CODE",
+            "MEANING",
+            "BIRTHDAY",
+            "NEXT_IPPT_DUE",
+            "CURRENT_GRADE"
+        FROM {schema_name}.MHA_NSMAN_MAPPED
+        WHERE "NSMAN_ID" = '{nsman_id}'
+    """
+    hana_df = dataframe.DataFrame(connection, sql_query)
+    nsman_df = hana_df.collect()
+
+    # Convert to JSON-friendly format
+    results = []
+    for row in nsman_df.to_dict(orient='records'):
+        results.append({
+            "NS ID": row["NSMAN_ID"],
+            "Name": row["NAME"],
+            "Email": row["EMAIL"],
+            "PES Status": row["PES_STATUS_ID"],
+            "Rank Code": row["RANK_CODE"],
+            "Birthday": row["BIRTHDAY"],
+            "Next IPPT Due": row["NEXT_IPPT_DUE"],
+            "Current Grade": row["CURRENT_GRADE"]
+        })
+
+    return jsonify({"nsman_mapped": results}), 200
 
 
 @app.route('/get_project_details', methods=['GET'])

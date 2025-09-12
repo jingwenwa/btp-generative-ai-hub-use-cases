@@ -1,0 +1,7 @@
+{
+    "ID": [0, 1],
+    "description": ["useful for when you need to do AutoML Regression/AutomaticRegression inference and do reason code.",
+                    "useful for when you need to do AutoML Classification/AutomaticClassification inference and do reason code."],
+    "example": ["Examples\n--------\nDo inference:\n>>> from hana_ml.algorithms.pal.auto_ml import AutomaticRegression\n>>> mymodel = AutomaticRegression()\n>>> mymodel.model_ = <data_frame>.connection_context.table(<MODEL_TABLE>)\n>>> #show_explainer needs to be set True if reason_code needs to be outputted.\n>>> result = mymodel.predict(data=<data_frame>, key=<ID>, show_explainer=True)\n>>> result.save(<PREDICT_RESULT>)\n>>> #output the reason code\n>>> print(result.select(result.columns[3]).collect().to_numpy())\n",
+    "Examples\n--------\nDo inference:\n>>> from hana_ml.algorithms.pal.auto_ml import AutomaticClassification\n>>> mymodel = AutomaticClassification()\n>>> mymodel.model_ = <data_frame>.connection_context.table(<MODEL_TABLE>)\n>>> #show_explainer needs to be set True if reason_code needs to be outputted.\n>>> result = mymodel.predict(data=<data_frame>, key=<ID>, show_explainer=True)\n>>> result.save(<PREDICT_RESULT>)\n>>> #output the reason code\n>>> print(result.select(result.columns[3]).collect().to_numpy())\n"]
+}
