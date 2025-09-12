@@ -11,6 +11,7 @@
 	xmlns:viz="sap.viz.ui5.controls"
 	xmlns:layout="sap.ui.layout"
     xmlns:ng="sap.suite.ui.commons.networkgraph">
+    
     <MessageStrip
         text="The search tool is powered by Semantics search (in-database embeddings) from SAP HANA Cloud."
         showIcon="true"
@@ -18,36 +19,39 @@
         showCloseButton="true"
         class="sapUiTinyMarginBottom">
     </MessageStrip>
-        <OverflowToolbar height="auto" width="100%">
-            <!-- NSMAN ID input -->
-            <VBox class="sapUiSmallMarginEnd">
-                <Label text="NSMAN ID"/>
-                <Input
-                    id="nsmanIdInput"
-                    placeholder="Enter ID"
-                    type="Number"
-                    width="10rem"
-                    liveChange=".onIdChange"
-                    enabled="{ui>/enabled}" />
-            </VBox>
-
-            <!-- FeedInput fills remaining space -->
-            <FeedInput
-                icon="sap-icon://ai"
-                id="hanaSearchInput"
-                placeholder="Enter your prompt..."
-                growing="false"
-                rows="3"
-                post=".onEmbedHANASimilaritySearch"
+    
+    <OverflowToolbar height="auto" width="100%">
+        <!-- NSMAN ID input -->
+        <VBox class="sapUiSmallMarginEnd">
+            <Label text="NSMAN ID"/>
+            <Input
+                id="nsmanIdInput"
+                placeholder="Enter ID"
+                type="Number"
+                width="10rem"
+                liveChange=".onIdChange"
                 enabled="{ui>/enabled}"
-                class="sapUiTinyMarginTopBottom"
-                width="25rem">   <!-- fixed width, e.g. 25rem -->
-                <layoutData>
-                    <OverflowToolbarLayoutData shrinkable="true" priority="High"/>
-                </layoutData>
-            </FeedInput>
-        </OverflowToolbar>
-        <f:GridList
+                />  
+        </VBox>
+
+        <!-- FeedInput fills remaining space -->
+        <FeedInput
+            icon="sap-icon://ai"
+            id="hanaSearchInput"
+            placeholder="Enter your prompt..."
+            growing="false"
+            rows="3"
+            post=".onEmbedHANASimilaritySearch"
+            enabled="{ui>/enabled}"
+            class="sapUiTinyMarginTopBottom"
+            width="25rem">
+            <layoutData>
+                <OverflowToolbarLayoutData shrinkable="true" priority="High"/>
+            </layoutData>
+        </FeedInput>
+    </OverflowToolbar>
+    
+    <f:GridList
         id="gridList"
         headerText=""
         items="{search>/similarities}"
@@ -66,13 +70,15 @@
                 </layoutData>
                 <VBox class="sapUiSmallMargin">
                     <Title text="Booking {search>BOOKING_NO}" wrapping="true" />
+                    <Text text="NSMAN ID: {search>NSMAN_ID}" class="sapUiTinyMarginBottom"/>
+                    <Text text="Similarity: {search>SIMILARITY}" class="sapUiTinyMarginBottom"/>
                     <ExpandableText class="sapUiTinyMarginBottom sapUiTinyMarginTop sapUiLargeFontSize" text="{search>TEXT}" overflowMode="Popover" />
                 </VBox>
                 
                 <OverflowToolbar design="Solid" class="sapContrast">
                     <Button icon="sap-icon://hint" type="Transparent" press="onCoinStar"/>
                     <ToolbarSpacer />
-                    <Button text="Book" type="Emphasized" press="onBook"/>
+                    <Button text="Book" type="Emphasized" press="onBook" icon="sap-icon://accept"/>
                 </OverflowToolbar>
             </VBox>
         </f:GridListItem>
@@ -84,6 +90,4 @@
                 illustrationType="sapIllus-NoSearchResults" />
         </f:noData>
     </f:GridList>
-     
-    
 </core:FragmentDefinition>

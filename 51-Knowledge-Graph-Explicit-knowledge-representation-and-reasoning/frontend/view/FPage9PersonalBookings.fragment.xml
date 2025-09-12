@@ -85,12 +85,6 @@
                             <Column>
                                 <Text text="Date &amp; Time"/>
                             </Column>
-                            <Column>
-                                <Text text="Status"/>
-                            </Column>
-                            <Column>
-                                <Text text="Actions"/>
-                            </Column>
                         </columns>
                         <items>
                             <ColumnListItem>

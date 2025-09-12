@@ -2667,19 +2667,235 @@ sap.ui.define(
       },
 
       onBook: function (oEvent) {
-        // Optional: fetch item context if you want to know which was booked
-        const oModel = this.getView().getModel("search");
-        const context = oEvent
-          .getSource()
-          .getParent()
-          .getParent()
-          .getBindingContext("search");
-        const data = context ? context.getObject() : {};
+        try {
+          // Get the binding context from the clicked item
+          const oBindingContext = oEvent
+            .getSource()
+            .getBindingContext("search");
 
-        // Show toast
-        sap.m.MessageToast.show(
-          "You've booked" + (data.TEXT ? ": " + data.TEXT : "!")
+          if (!oBindingContext) {
+            sap.m.MessageToast.show("Unable to retrieve booking details");
+            return;
+          }
+
+          // Get the booking data
+          const oBookingData = oBindingContext.getObject();
+
+          // Get NSMAN ID from the input field
+          let nsmanIdInput =
+            this.byId(this.createId && this.createId("nsmanIdInput")) ||
+            this.byId("nsmanIdInput") ||
+            sap.ui.getCore().byId("nsmanIdInput");
+
+          if (!nsmanIdInput && this.getView()?.findAggregatedObjects) {
+            const allControls = this.getView().findAggregatedObjects(true);
+            nsmanIdInput = allControls.find(
+              (c) => c.getPlaceholder && c.getPlaceholder() === "Enter ID"
+            );
+          }
+
+          const nsmanId = nsmanIdInput?.getValue?.() || "";
+
+          // Create booking object with current timestamp
+          const booking = {
+            id: this._generateBookingId(), // Generate unique booking ID
+            nsmanId: nsmanId,
+            bookingNo: oBookingData.BOOKING_NO,
+            text: oBookingData.TEXT,
+            similarity: oBookingData.SIMILARITY,
+            location: this._getCurrentLocation(), // You can customize this
+            dateTime: new Date().toISOString(),
+            timestamp: Date.now(),
+          };
+
+          // Store the booking
+          this._storeBooking(booking);
+
+          // Show success message
+          sap.m.MessageToast.show(
+            `Booking ${booking.bookingNo} stored successfully!`
+          );
+
+          // Optional: fetch item context if you want to know which was booked
+          const oModel = this.getView().getModel("search");
+          const context = oEvent
+            .getSource()
+            .getParent()
+            .getParent()
+            .getBindingContext("search");
+          const data = context ? context.getObject() : {};
+
+          // Show toast
+          sap.m.MessageToast.show(
+            "You've booked" + (data.TEXT ? ": " + data.TEXT : "!")
+          );
+
+          console.log("Booking stored:", booking);
+        } catch (error) {
+          console.error("Error storing booking:", error);
+          sap.m.MessageToast.show(
+            "Failed to store booking: " + (error?.message || error)
+          );
+        }
+      },
+
+      // Helper method to generate unique booking ID
+      _generateBookingId: function () {
+        return (
+          "BK_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
         );
+      },
+
+      // Helper method to get current location (customize as needed)
+      _getCurrentLocation: function () {
+        // You can implement geolocation or return a default/configured location
+        // For now, returning a placeholder - customize based on your needs
+        return "Default Location"; // Replace with actual location logic
+      },
+
+      // Store booking in frontend storage that persists across pages
+      _storeBooking: function (booking) {
+        try {
+          // Get existing bookings from the model or create empty array
+          let oGlobalModel = sap.ui.getCore().getModel("globalBookings");
+
+          if (!oGlobalModel) {
+            // Create global model if it doesn't exist
+            oGlobalModel = new sap.ui.model.json.JSONModel({
+              bookings: [],
+            });
+            sap.ui.getCore().setModel(oGlobalModel, "globalBookings");
+          }
+
+          let aBookings = oGlobalModel.getProperty("/bookings") || [];
+
+          // Add new booking
+          aBookings.push(booking);
+
+          // Update the model
+          oGlobalModel.setProperty("/bookings", aBookings);
+
+          // Also store in component data for additional persistence
+          const oComponent = this.getOwnerComponent();
+          if (oComponent) {
+            let oComponentData = oComponent.getComponentData() || {};
+            oComponentData.storedBookings = aBookings;
+            oComponent.setComponentData(oComponentData);
+          }
+
+          console.log("Total bookings stored:", aBookings.length);
+        } catch (error) {
+          console.error("Error in _storeBooking:", error);
+          throw error;
+        }
+      },
+
+      // Method to retrieve all stored bookings (call this from other controllers/pages)
+      getStoredBookings: function () {
+        try {
+          const oGlobalModel = sap.ui.getCore().getModel("globalBookings");
+          if (oGlobalModel) {
+            return oGlobalModel.getProperty("/bookings") || [];
+          }
+
+          // Fallback to component data
+          const oComponent = this.getOwnerComponent();
+          if (oComponent && oComponent.getComponentData()?.storedBookings) {
+            return oComponent.getComponentData().storedBookings;
+          }
+
+          return [];
+        } catch (error) {
+          console.error("Error retrieving stored bookings:", error);
+          return [];
+        }
+      },
+
+      // Method to clear all bookings (optional - for testing/admin purposes)
+      clearAllBookings: function () {
+        try {
+          const oGlobalModel = sap.ui.getCore().getModel("globalBookings");
+          if (oGlobalModel) {
+            oGlobalModel.setProperty("/bookings", []);
+          }
+
+          const oComponent = this.getOwnerComponent();
+          if (oComponent) {
+            let oComponentData = oComponent.getComponentData() || {};
+            oComponentData.storedBookings = [];
+            oComponent.setComponentData(oComponentData);
+          }
+
+          sap.m.MessageToast.show("All bookings cleared");
+        } catch (error) {
+          console.error("Error clearing bookings:", error);
+        }
+      },
+      _loadStoredBookings: function () {
+        try {
+          // Method 1: Access via global model
+          const oGlobalModel = sap.ui.getCore().getModel("globalBookings");
+          if (oGlobalModel) {
+            const aBookings = oGlobalModel.getProperty("/bookings") || [];
+            console.log("Found bookings:", aBookings);
+
+            // Bind to local view model
+            this.getView().setModel(
+              new sap.ui.model.json.JSONModel({ bookings: aBookings }),
+              "localBookings"
+            );
+          }
+
+          // Method 2: Access via component data (fallback)
+          if (!oGlobalModel) {
+            const oComponent = this.getOwnerComponent();
+            if (oComponent && oComponent.getComponentData()?.storedBookings) {
+              const aBookings = oComponent.getComponentData().storedBookings;
+              this.getView().setModel(
+                new sap.ui.model.json.JSONModel({ bookings: aBookings }),
+                "localBookings"
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Error loading stored bookings:", error);
+        }
+      },
+
+      onShowBookingDetails: function () {
+        const oGlobalModel = sap.ui.getCore().getModel("globalBookings");
+        if (oGlobalModel) {
+          const aBookings = oGlobalModel.getProperty("/bookings") || [];
+
+          // Create a formatted string of all bookings
+          let sBookingDetails = "Stored Bookings:\n\n";
+          aBookings.forEach((booking, index) => {
+            sBookingDetails += `${index + 1}. Booking ${booking.bookingNo}\n`;
+            sBookingDetails += `   NSMAN ID: ${booking.nsmanId}\n`;
+            sBookingDetails += `   Date: ${new Date(
+              booking.dateTime
+            ).toLocaleString()}\n`;
+            sBookingDetails += `   Location: ${booking.location}\n`;
+            sBookingDetails += `   Details: ${booking.text.substring(
+              0,
+              100
+            )}...\n\n`;
+          });
+
+          // Show in dialog or message box
+          sap.m.MessageBox.information(sBookingDetails, {
+            title: `${aBookings.length} Booking(s) Found`,
+          });
+        }
+      },
+
+      getBookingsByNsmanId: function (nsmanId) {
+        const oGlobalModel = sap.ui.getCore().getModel("globalBookings");
+        if (oGlobalModel) {
+          const aAllBookings = oGlobalModel.getProperty("/bookings") || [];
+          return aAllBookings.filter((booking) => booking.nsmanId === nsmanId);
+        }
+        return [];
       },
       formatBookingTitle: function (index) {
         return "Booking " + (index + 1);

@@ -24,7 +24,7 @@
                 <VBox class="overlayContent">
                     <tnt:InfoLabel text="New" colorScheme="7" class="customBadge sapUiSmallMarginBottom"/>
                     <Title text="Digital Concierge​" level="H1" class="customTitle sapUiSmallMarginBottom"/>
-                    <Text text="Learn how to organize and represent enterprise data in a graph structure with HANA Cloud Knowledge Graph Engine, where entities are interconnected by relationships, creating a network of business-related information. Discover how this structure facilitates knowledge representation and reasoning. Learn how to leverage Knowledge Graphs to retrieve structured data and achieve greater accuracy and explainability in RAG scenarios." class="customText"/>
+                    <Text text="Learn how to organize and represent IPPT-related data in a graph structure with HANA Cloud Knowledge Graph Engine, where NSmen, test records, locations, and scores are interconnected by relationships, creating a network of critical information. By integrating a vector database on the backend, a digital concierge search can perform semantic and similarity-based queries over IPPT records, enabling rapid retrieval of relevant results. Discover how this structure facilitates knowledge representation, reasoning, and explainable recommendations for training, assessment tracking, and performance analysis." class="customText"/>
                     <Text text="Explicit knowledge representation and reasoning with Knowledge Graphs" class="customSmallText" />
                     <HBox class="sapUiNoMarginBegin sapUiMediumMarginTop">
                         <!-- <Button text="Get Started" type="Emphasized" class="customButton"/>
