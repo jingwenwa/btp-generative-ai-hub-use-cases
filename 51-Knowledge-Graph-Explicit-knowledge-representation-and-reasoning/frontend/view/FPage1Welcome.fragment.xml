@@ -31,8 +31,6 @@
                         <Button text="Read The Docs" class="customButton"/> -->
                         <Button icon="sap-icon://sys-help" press="onSearchPress" text="Help with a new search?" class="sapUiNoMarginBegin sapUiTinyMargin"/>
                         <Button icon="sap-icon://search" press="onKBPress" text="Search knowledge base" class="sapUiTinyMargin"/>
-                        <Button icon="sap-icon://learning-assistant" press="onClusterExpPress" text="Explore cluster analysis of advisories" class="sapUiTinyMargin"/>
-                        <Button icon="sap-icon://learning-assistant" press="onCatMgmtPress" text="Manage categories" class="sapUiTinyMargin"/>
                         <Button id="jouleWelcomeBtn" visible="false" icon="sap-icon://da" press="onJoule" text="Talk to Joule for Insights" class="sapUiTinyMargin"/>
                     </HBox>
                 </VBox>

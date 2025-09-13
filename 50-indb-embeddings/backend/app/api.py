@@ -420,16 +420,20 @@ def get_nsman_mapped():
     hana_df = dataframe.DataFrame(connection, sql_query)
     nsman_df = hana_df.collect()
 
-    # Convert to JSON-friendly format
+    # Convert to JSON-friendly format with formatted Birthday
     results = []
     for row in nsman_df.to_dict(orient='records'):
+        birthday = row["BIRTHDAY"]
+        if birthday:  # format as YYYY-MM-DD
+            birthday = birthday.strftime('%Y-%m-%d') if hasattr(birthday, 'strftime') else str(birthday)
+
         results.append({
             "NS ID": row["NSMAN_ID"],
             "Name": row["NAME"],
             "Email": row["EMAIL"],
             "PES Status": row["PES_STATUS_ID"],
             "Rank Code": row["RANK_CODE"],
-            "Birthday": row["BIRTHDAY"],
+            "Birthday": birthday,
             "Current Grade": row["CURRENT_GRADE"]
         })
 

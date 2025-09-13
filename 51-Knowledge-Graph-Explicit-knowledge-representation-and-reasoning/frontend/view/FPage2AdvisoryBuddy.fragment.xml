@@ -69,9 +69,7 @@
                     <FlexItemData growFactor="1" shrinkFactor="0" />
                 </layoutData>
                 <VBox class="sapUiSmallMargin">
-                    <Title text="Booking {search>BOOKING_NO}" wrapping="true" />
-                    <Text text="NSMAN ID: {search>NSMAN_ID}" class="sapUiTinyMarginBottom"/>
-                    <Text text="Similarity: {search>SIMILARITY}" class="sapUiTinyMarginBottom"/>
+                    <Title text="Recommendation {search>BOOKING_NO}" wrapping="true" />
                     <ExpandableText class="sapUiTinyMarginBottom sapUiTinyMarginTop sapUiLargeFontSize" text="{search>TEXT}" overflowMode="Popover" />
                 </VBox>
                 

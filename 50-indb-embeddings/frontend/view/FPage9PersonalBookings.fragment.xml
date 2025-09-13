@@ -62,6 +62,9 @@
                             <Column>
                                 <Text text="Status"/>
                             </Column>
+                            <Column>
+                                <Text text="Actions"/>
+                            </Column>
                         </columns>
                         <items>
                             <ColumnListItem>
@@ -76,6 +79,10 @@
                                         <Text text="Booking ID: {localBookings>bookingNo}" class="sapUiTinyMarginTop"/>
                                     </VBox>
                                     <ObjectStatus text="{localBookings>bookingDetails/status}" state="Success"/>
+                                    <HBox>
+                                        <Button text="Reschedule" type="Transparent" icon="sap-icon://edit"/>
+                                        <Button text="Cancel" type="Transparent" icon="sap-icon://decline"/>
+                                    </HBox>
                                 </cells>
                             </ColumnListItem>
                         </items>

@@ -2625,7 +2625,7 @@ sap.ui.define(
 
           const similarities = data?.similarities || [];
 
-          // 6) Expand each record into 3 (one per solution)
+          // 6) Expand each record into 3 (one per solution) and parse location/date/time
           const expanded = similarities.flatMap((it) =>
             [
               {
@@ -2633,18 +2633,21 @@ sap.ui.define(
                 SIMILARITY: it.SIMILARITY,
                 TEXT: it.SOLUTION,
                 BOOKING_NO: 1,
+                ...this._parseTextForLocationDateTime(it.SOLUTION),
               },
               {
                 NSMAN_ID: it.NSMAN_ID,
                 SIMILARITY: it.SIMILARITY,
                 TEXT: it.SOLUTION_TWO,
                 BOOKING_NO: 2,
+                ...this._parseTextForLocationDateTime(it.SOLUTION_TWO),
               },
               {
                 NSMAN_ID: it.NSMAN_ID,
                 SIMILARITY: it.SIMILARITY,
                 TEXT: it.SOLUTION_THREE,
                 BOOKING_NO: 3,
+                ...this._parseTextForLocationDateTime(it.SOLUTION_THREE),
               },
             ].filter((e) => e.TEXT)
           );
@@ -2655,7 +2658,78 @@ sap.ui.define(
             "search"
           );
 
-          console.log("Expanded similarities:", expanded);
+          console.log(
+            "Expanded similarities with parsed location/date/time:",
+            expanded
+          );
+
+          // 8) Fetch NSMAN data if we have a valid NSMAN ID
+          if (hasValidId) {
+            try {
+              console.log("Fetching NSMAN data for ID:", idForQuery);
+
+              const nsmanResponse = await fetch(
+                "https://indb-embedding.cfapps.ap10.hana.ondemand.com/get_nsman_mapped",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    NSMAN_ID: idForQuery.toString(),
+                  }),
+                }
+              );
+
+              if (!nsmanResponse.ok) {
+                throw new Error(`HTTP error! status: ${nsmanResponse.status}`);
+              }
+
+              const nsmanData = await nsmanResponse.json();
+              console.log("NSMAN data received:", nsmanData);
+
+              // Store NSMAN data for the bookings page
+              if (nsmanData.nsman_mapped && nsmanData.nsman_mapped.length > 0) {
+                this._storeNsmanData(nsmanData.nsman_mapped[0]);
+              }
+
+              // Also fetch IPPT history for the same NSMAN ID
+              try {
+                console.log("Fetching IPPT history for ID:", idForQuery);
+
+                const ipptResponse = await fetch(
+                  "https://indb-embedding.cfapps.ap10.hana.ondemand.com/get_ippt_history",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      NSMAN_ID: idForQuery.toString(),
+                    }),
+                  }
+                );
+
+                if (!ipptResponse.ok) {
+                  throw new Error(`HTTP error! status: ${ipptResponse.status}`);
+                }
+
+                const ipptData = await ipptResponse.json();
+                console.log("IPPT history received:", ipptData);
+
+                // Store IPPT history data
+                if (ipptData.ippt_history && ipptData.ippt_history.length > 0) {
+                  this._storeIpptHistory(idForQuery, ipptData.ippt_history);
+                }
+              } catch (ipptError) {
+                console.warn("Failed to fetch IPPT history:", ipptError);
+                // Don't fail the entire search if IPPT fetch fails
+              }
+            } catch (nsmanError) {
+              console.warn("Failed to fetch NSMAN data:", nsmanError);
+              // Don't fail the entire search if NSMAN fetch fails
+            }
+          }
         } catch (error) {
           console.error("In onEmbedHANASimilaritySearch:", error);
           sap.m.MessageToast.show(
@@ -2663,6 +2737,154 @@ sap.ui.define(
           );
         } finally {
           this.setAppBusy(false);
+        }
+      },
+
+      // Parse TEXT field to extract location, date, and time information
+      _parseTextForLocationDateTime: function (text) {
+        if (!text) {
+          return {
+            LOCATION_NAME: "Default Location",
+            TEST_DATE: new Date().toISOString().split("T")[0],
+            TIME: "07:00:00",
+          };
+        }
+
+        // Try to extract location (look for common location patterns)
+        let location = "Default Location";
+        const locationPatterns = [
+          /Location[:\s]+([^,\n]+)/i,
+          /at\s+([^,\n]+)/i,
+          /venue[:\s]+([^,\n]+)/i,
+          /place[:\s]+([^,\n]+)/i,
+          /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:HQ|Center|Centre|Building|Hall|Gym|Stadium|Arena))/i,
+          /([A-Z]{2,}\s+[A-Z]{2,})/i,
+        ];
+
+        for (const pattern of locationPatterns) {
+          const match = text.match(pattern);
+          if (match) {
+            location = match[1] || match[0];
+            break;
+          }
+        }
+
+        // Try to extract date (look for date patterns)
+        let date = new Date().toISOString().split("T")[0];
+        const datePatterns = [
+          /(\d{4}-\d{2}-\d{2})/,
+          /(\d{2}\/\d{2}\/\d{4})/,
+          /(\d{2}-\d{2}-\d{4})/,
+          /Date[:\s]+([^,\n]+)/i,
+          /on\s+([^,\n]+)/i,
+        ];
+
+        for (const pattern of datePatterns) {
+          const match = text.match(pattern);
+          if (match) {
+            date = match[1];
+            // Convert to YYYY-MM-DD format if needed
+            if (date.includes("/")) {
+              const parts = date.split("/");
+              if (parts.length === 3) {
+                date = `${parts[2]}-${parts[1].padStart(
+                  2,
+                  "0"
+                )}-${parts[0].padStart(2, "0")}`;
+              }
+            }
+            break;
+          }
+        }
+
+        // Try to extract time (look for time patterns)
+        let time = "07:00:00";
+        const timePatterns = [
+          /(\d{1,2}:\d{2}(?::\d{2})?)/,
+          /Time[:\s]+([^,\n]+)/i,
+          /at\s+(\d{1,2}:\d{2})/i,
+        ];
+
+        for (const pattern of timePatterns) {
+          const match = text.match(pattern);
+          if (match) {
+            time = match[1];
+            // Ensure time has seconds
+            if (time.split(":").length === 2) {
+              time += ":00";
+            }
+            break;
+          }
+        }
+
+        console.log("Parsed location/date/time from text:", {
+          text: text,
+          location: location,
+          date: date,
+          time: time,
+        });
+
+        return {
+          LOCATION_NAME: location,
+          TEST_DATE: date,
+          TIME: time,
+        };
+      },
+
+      // Store NSMAN data for the bookings page
+      _storeNsmanData: function (nsmanData) {
+        try {
+          // Get or create global NSMAN model
+          let oGlobalModel = sap.ui.getCore().getModel("globalNsmanData");
+
+          if (!oGlobalModel) {
+            oGlobalModel = new sap.ui.model.json.JSONModel({
+              nsmanData: {},
+            });
+            sap.ui.getCore().setModel(oGlobalModel, "globalNsmanData");
+          }
+
+          // Store the NSMAN data with the ID as key
+          const nsmanId = nsmanData["NS ID"];
+          const currentData = oGlobalModel.getProperty("/nsmanData") || {};
+          currentData[nsmanId] = {
+            ...nsmanData,
+            lastUpdated: new Date().toISOString(),
+          };
+
+          oGlobalModel.setProperty("/nsmanData", currentData);
+
+          console.log("NSMAN data stored for ID:", nsmanId);
+        } catch (error) {
+          console.error("Error storing NSMAN data:", error);
+        }
+      },
+
+      // Store IPPT history data
+      _storeIpptHistory: function (nsmanId, ipptHistory) {
+        try {
+          // Get or create global IPPT history model
+          let oGlobalModel = sap.ui.getCore().getModel("globalIpptHistory");
+
+          if (!oGlobalModel) {
+            oGlobalModel = new sap.ui.model.json.JSONModel({
+              ipptHistory: {},
+            });
+            sap.ui.getCore().setModel(oGlobalModel, "globalIpptHistory");
+          }
+
+          // Store the IPPT history with the ID as key
+          const currentData = oGlobalModel.getProperty("/ipptHistory") || {};
+          currentData[nsmanId] = {
+            history: ipptHistory,
+            lastUpdated: new Date().toISOString(),
+          };
+
+          oGlobalModel.setProperty("/ipptHistory", currentData);
+
+          console.log("IPPT history stored for ID:", nsmanId);
+        } catch (error) {
+          console.error("Error storing IPPT history:", error);
         }
       },
 
@@ -2681,6 +2903,9 @@ sap.ui.define(
           // Get the booking data
           const oBookingData = oBindingContext.getObject();
 
+          // Debug: Log the booking data structure
+          console.log("Booking data from search result:", oBookingData);
+
           // Get NSMAN ID from the input field
           let nsmanIdInput =
             this.byId(this.createId && this.createId("nsmanIdInput")) ||
@@ -2696,16 +2921,62 @@ sap.ui.define(
 
           const nsmanId = nsmanIdInput?.getValue?.() || "";
 
-          // Create booking object with current timestamp
+          // Extract session details from the search result
+          // Try multiple possible property names for location
+          const sessionLocation =
+            oBookingData.LOCATION_NAME ||
+            oBookingData.LOCATION ||
+            oBookingData.location ||
+            oBookingData.Location ||
+            "Default Location";
+
+          // Try multiple possible property names for date
+          const sessionDate =
+            oBookingData.TEST_DATE ||
+            oBookingData.DATE ||
+            oBookingData.date ||
+            oBookingData.Date ||
+            new Date().toISOString().split("T")[0];
+
+          // Try multiple possible property names for time
+          const sessionTime =
+            oBookingData.TIME ||
+            oBookingData.time ||
+            oBookingData.Time ||
+            "07:00:00";
+
+          // Debug: Log extracted values
+          console.log("Extracted session details:", {
+            sessionLocation,
+            sessionDate,
+            sessionTime,
+          });
+
+          // Format the session date and time for display
+          let formattedDateTime = sessionDate;
+          if (sessionTime) {
+            formattedDateTime = `${sessionDate} | ${sessionTime}`;
+          }
+
           const booking = {
-            id: this._generateBookingId(), // Generate unique booking ID
+            id: this._generateBookingId(),
             nsmanId: nsmanId,
             bookingNo: oBookingData.BOOKING_NO,
             text: oBookingData.TEXT,
             similarity: oBookingData.SIMILARITY,
-            location: this._getCurrentLocation(), // You can customize this
-            dateTime: new Date().toISOString(),
+            location: sessionLocation,
+            dateTime: sessionDate,
+            formattedDateTime: formattedDateTime,
             timestamp: Date.now(),
+            // Additional booking details
+            bookingDetails: {
+              location: sessionLocation,
+              date: sessionDate,
+              time: sessionTime,
+              timezone: "Asia/Singapore",
+              bookingType: "IPPT Session",
+              status: "Confirmed",
+            },
           };
 
           // Store the booking
@@ -2730,7 +3001,14 @@ sap.ui.define(
             "You've booked" + (data.TEXT ? ": " + data.TEXT : "!")
           );
 
-          console.log("Booking stored:", booking);
+          console.log("=== BOOKING CREATED ===");
+          console.log("Booking JSON:", JSON.stringify(booking, null, 2));
+          console.log("Location:", booking.location);
+          console.log("Date & Time:", booking.formattedDateTime);
+          console.log(
+            "Booking Details:",
+            JSON.stringify(booking.bookingDetails, null, 2)
+          );
         } catch (error) {
           console.error("Error storing booking:", error);
           sap.m.MessageToast.show(
@@ -2775,13 +3053,7 @@ sap.ui.define(
           // Update the model
           oGlobalModel.setProperty("/bookings", aBookings);
 
-          // Also store in component data for additional persistence
-          const oComponent = this.getOwnerComponent();
-          if (oComponent) {
-            let oComponentData = oComponent.getComponentData() || {};
-            oComponentData.storedBookings = aBookings;
-            oComponent.setComponentData(oComponentData);
-          }
+          // Note: Component data storage removed due to setComponentData not being available
 
           console.log("Total bookings stored:", aBookings.length);
         } catch (error) {
@@ -2819,12 +3091,7 @@ sap.ui.define(
             oGlobalModel.setProperty("/bookings", []);
           }
 
-          const oComponent = this.getOwnerComponent();
-          if (oComponent) {
-            let oComponentData = oComponent.getComponentData() || {};
-            oComponentData.storedBookings = [];
-            oComponent.setComponentData(oComponentData);
-          }
+          // Note: Component data clearing removed due to setComponentData not being available
 
           sap.m.MessageToast.show("All bookings cleared");
         } catch (error) {
@@ -2859,6 +3126,85 @@ sap.ui.define(
           }
         } catch (error) {
           console.error("Error loading stored bookings:", error);
+        }
+      },
+
+      // Load NSMAN data for the bookings page
+      _loadNsmanDataForBookingsPage: function () {
+        try {
+          console.log("_loadNsmanDataForBookingsPage called");
+          const oGlobalModel = sap.ui.getCore().getModel("globalNsmanData");
+          console.log("Global NSMAN model:", oGlobalModel);
+
+          if (oGlobalModel) {
+            const allNsmanData = oGlobalModel.getProperty("/nsmanData") || {};
+            console.log("All NSMAN data:", allNsmanData);
+
+            // Get the most recent NSMAN data
+            const nsmanIds = Object.keys(allNsmanData);
+            console.log("NSMAN IDs found:", nsmanIds);
+
+            if (nsmanIds.length > 0) {
+              // Get the most recently updated data
+              let latestData = null;
+              let latestTimestamp = 0;
+
+              nsmanIds.forEach((id) => {
+                const data = allNsmanData[id];
+                const timestamp = new Date(data.lastUpdated).getTime();
+                if (timestamp > latestTimestamp) {
+                  latestTimestamp = timestamp;
+                  latestData = data;
+                }
+              });
+
+              console.log("Latest NSMAN data:", latestData);
+
+              if (latestData) {
+                // Get IPPT history for the same NSMAN ID
+                const nsmanId = latestData["NS ID"];
+                const ipptHistoryData = this._getIpptHistory(nsmanId);
+
+                // Create a model for the bookings page with NSMAN data and IPPT history
+                const bookingsPageModel = new sap.ui.model.json.JSONModel({
+                  nsmanProfile: latestData,
+                  ipptHistory: ipptHistoryData || [],
+                  currentBookings: this.getStoredBookings() || [],
+                });
+
+                this.getView().setModel(bookingsPageModel, "bookingsPage");
+                console.log(
+                  "Bookings page model set with NSMAN data and IPPT history:",
+                  latestData,
+                  ipptHistoryData
+                );
+              } else {
+                console.log("No latest data found");
+              }
+            } else {
+              console.log("No NSMAN IDs found");
+            }
+          } else {
+            console.log("No global NSMAN model found");
+          }
+        } catch (error) {
+          console.error("Error loading NSMAN data for bookings page:", error);
+        }
+      },
+
+      // Get IPPT history for a specific NSMAN ID
+      _getIpptHistory: function (nsmanId) {
+        try {
+          const oGlobalModel = sap.ui.getCore().getModel("globalIpptHistory");
+          if (oGlobalModel) {
+            const allIpptData = oGlobalModel.getProperty("/ipptHistory") || {};
+            const ipptData = allIpptData[nsmanId];
+            return ipptData ? ipptData.history : [];
+          }
+          return [];
+        } catch (error) {
+          console.error("Error retrieving IPPT history:", error);
+          return [];
         }
       },
 
@@ -4033,14 +4379,28 @@ sap.ui.define(
       },
 
       onPersonalBookingsPress: function (oEvent) {
+        console.log("onPersonalBookingsPress called");
         this.byId("pageContainer").to(this.getView().createId("page9"));
         this.byId("sideNavigation").setSelectedKey("page9");
+
+        // Load stored bookings and NSMAN data for the bookings page
+        this._loadStoredBookings();
+        this._loadNsmanDataForBookingsPage();
       },
 
       onNavItemSelect: function (oEvent) {
         var oItem = oEvent.getParameter("item");
-        this.byId("pageContainer").to(this.getView().createId(oItem.getKey()));
-        // console.log(oItem.getKey());
+        var sKey = oItem.getKey();
+        console.log("onNavItemSelect called with key:", sKey);
+
+        this.byId("pageContainer").to(this.getView().createId(sKey));
+
+        // If navigating to page9 (My Bookings), load the NSMAN data
+        if (sKey === "page9") {
+          console.log("Navigating to My Bookings page - loading NSMAN data");
+          this._loadStoredBookings();
+          this._loadNsmanDataForBookingsPage();
+        }
         if (oItem.getKey() == "page6") {
           this.setAppBusy(true);
           var that = this;

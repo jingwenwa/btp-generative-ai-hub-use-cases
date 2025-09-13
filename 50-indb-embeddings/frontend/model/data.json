@@ -1,40 +1,71 @@
 {
-	"selectedKey": "page1",
-	"navigation": [
-		{
-			"title": "Welcome",
-			"icon": "sap-icon://home",
-			"key": "page1",
-			"visible": true
-		},
-		{
-			"title": "Advisory Buddy",
-			"icon": "sap-icon://citizen-connect",
-			"key": "page2",
-			"visible": true
-		},
-		{
-			"title": "Knowledge Base",
-			"icon": "sap-icon://activity-items",
-			"key": "page3",
-			"visible": true
-		},
-		{
-			"title": "Manager Cockpit",
-			"icon": "sap-icon://customer-view",
-			"enabled": true,
-			"visible": true,
-			"expanded": true,
-			"items": [
-				{
-					"title": "Cluster Exploration",
-					"key": "page4"
-				},
-				{
-					"title": "Category Management",
-					"key": "page5"
-				}
-			]
-		}
-	]
+  "selectedKey": "page1",
+  "navigation": [
+    {
+      "title": "Welcome",
+      "icon": "sap-icon://home",
+      "key": "page1",
+      "visible": true
+    },
+    {
+      "title": "Digital Concierge​ Search",
+      "icon": "sap-icon://citizen-connect",
+      "key": "page2",
+      "visible": true
+    },
+    {
+      "title": "Knowledge Base",
+      "icon": "sap-icon://activity-items",
+      "key": "page3",
+      "visible": true
+    },
+    {
+      "title": "My Bookings",
+      "icon": "sap-icon://calendar",
+      "key": "page9",
+      "visible": true
+    },
+    {
+      "title": "Knowledge Graph Discovery",
+      "icon": "sap-icon://explorer",
+      "key": "page6",
+      "visible": true
+    },
+    {
+      "title": "Concierge​ Explorer",
+      "icon": "sap-icon://explorer",
+      "enabled": true,
+      "visible": false,
+      "expanded": true,
+      "items": [
+        {
+          "title": "SPARQL Explorer",
+          "key": "page8",
+          "visible": false
+        },
+        {
+          "title": "Enhanced Digital Concierge Search",
+          "key": "page7",
+          "visible": false
+        }
+      ]
+    },
+    {
+      "title": "Manager Cockpit",
+      "icon": "sap-icon://customer-view",
+      "enabled": true,
+      "visible": false,
+      "expanded": true,
+      "items": [
+        {
+          "title": "Cluster Exploration",
+          "key": "page4"
+        },
+        {
+          "title": "Category Management",
+          "key": "page5"
+        }
+      ]
+    }
+  ]
 }
