@@ -2652,6 +2652,24 @@ sap.ui.define(
             ].filter((e) => e.TEXT)
           );
 
+          // Check for exemption in any of the search results
+          const hasExemption = expanded.some(
+            (result) =>
+              result.TEXT && result.TEXT.toLowerCase().includes("exempt")
+          );
+
+          if (hasExemption) {
+            this.setAppBusy(false);
+            sap.m.MessageBox.error(
+              "You are not permitted to make a booking. Exemption status detected in your records.",
+              {
+                title: "Booking Not Permitted",
+                actions: [sap.m.MessageBox.Action.OK],
+              }
+            );
+            return;
+          }
+
           // 7) Bind to the GridList
           this.getView().setModel(
             new sap.ui.model.json.JSONModel({ similarities: expanded }),
@@ -3421,14 +3439,29 @@ sap.ui.define(
         // add filter for search
         var aFilters = [];
         var sQuery = oEvent.getSource().getValue();
-        // console.log(sQuery);
+
         if (sQuery && sQuery.length > 0) {
-          var filter = new Filter("project_number", FilterOperator.EQ, sQuery);
-          // var filter = new Filter("solution", FilterOperator.Contains, sQuery);
-          aFilters.push(filter);
+          // Create filters for both topic and solution text
+          var topicFilter = new Filter(
+            "topic",
+            FilterOperator.Contains,
+            sQuery
+          );
+          var solutionFilter = new Filter(
+            "solution",
+            FilterOperator.Contains,
+            sQuery
+          );
+
+          // Combine filters with OR logic - search in either topic OR solution
+          var combinedFilter = new Filter({
+            filters: [topicFilter, solutionFilter],
+            and: false, // Use OR logic
+          });
+
+          aFilters.push(combinedFilter);
         }
 
-        // var oList = this.byId("idList");
         var oList = this.getView().byId(
           this.createId("FPage3KnowledgeBase--idList")
         );

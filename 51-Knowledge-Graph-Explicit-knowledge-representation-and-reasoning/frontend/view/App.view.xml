@@ -142,7 +142,7 @@
 							<ToolbarSpacer />
 							<Label text="Filter by:" labelFor="state"/>
 							<!-- <SearchField liveChange=".onKBSearch" width="55%"/> -->
-							<SearchField id="state" placeholder="Enter project/request ID..." change=".onKBSearch" width="55%"/>
+							<SearchField id="state" placeholder="Search by topic or solution..." change=".onKBSearch" width="55%"/>
                         </headerContent>
                         <content>
 							<core:Fragment fragmentName="chat.view.FPage3KnowledgeBase" id="FPage3KnowledgeBase" type="XML"/>
