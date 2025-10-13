@@ -79,6 +79,9 @@
                                 </cells>
                             </ColumnListItem>
                         </items>
+                        <noData>
+                            <Text text="No current bookings. Use the Advisory Buddy to search and book an IPPT session." class="sapUiMediumMargin"/>
+                        </noData>
                     </Table>
                 </f:content>
             </f:Card>

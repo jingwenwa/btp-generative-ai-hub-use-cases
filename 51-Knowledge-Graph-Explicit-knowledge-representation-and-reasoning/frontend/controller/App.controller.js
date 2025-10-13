@@ -2924,6 +2924,44 @@ sap.ui.define(
           // Debug: Log the booking data structure
           console.log("Booking data from search result:", oBookingData);
 
+          // Check if there's an existing booking
+          const existingBookings = this.getStoredBookings();
+          const hasExistingBooking =
+            existingBookings && existingBookings.length > 0;
+
+          // If there's an existing booking, show confirmation dialog
+          if (hasExistingBooking) {
+            const existingBooking = existingBookings[0];
+            const confirmationMessage = `You already have a booking for ${existingBooking.location} on ${existingBooking.formattedDateTime}. Do you want to replace it with this new booking?`;
+
+            sap.m.MessageBox.confirm(confirmationMessage, {
+              title: "Replace Existing Booking",
+              actions: [
+                sap.m.MessageBox.Action.YES,
+                sap.m.MessageBox.Action.NO,
+              ],
+              onClose: (oAction) => {
+                if (oAction === sap.m.MessageBox.Action.YES) {
+                  this._processBooking(oBookingData, oEvent);
+                }
+              },
+            });
+            return;
+          }
+
+          // No existing booking, proceed directly
+          this._processBooking(oBookingData, oEvent);
+        } catch (error) {
+          console.error("Error in onBook:", error);
+          sap.m.MessageToast.show(
+            "Failed to process booking: " + (error?.message || error)
+          );
+        }
+      },
+
+      // Helper method to process the actual booking
+      _processBooking: function (oBookingData, oEvent) {
+        try {
           // Get NSMAN ID from the input field
           let nsmanIdInput =
             this.byId(this.createId && this.createId("nsmanIdInput")) ||
@@ -2997,10 +3035,12 @@ sap.ui.define(
             },
           };
 
-          // Store the booking
+          // Store the booking (this will replace any existing booking)
           this._storeBooking(booking);
 
           // Show success message
+          // Note: Since _storeBooking now always replaces existing bookings,
+          // we'll show a generic success message
           sap.m.MessageToast.show(
             `Booking ${booking.bookingNo} stored successfully!`
           );
@@ -3027,8 +3067,11 @@ sap.ui.define(
             "Booking Details:",
             JSON.stringify(booking.bookingDetails, null, 2)
           );
+
+          // Refresh the bookings page if it's currently visible
+          this._refreshBookingsPageIfVisible();
         } catch (error) {
-          console.error("Error storing booking:", error);
+          console.error("Error processing booking:", error);
           sap.m.MessageToast.show(
             "Failed to store booking: " + (error?.message || error)
           );
@@ -3042,6 +3085,25 @@ sap.ui.define(
         );
       },
 
+      // Helper method to refresh bookings page if it's currently visible
+      _refreshBookingsPageIfVisible: function () {
+        try {
+          // Check if we're currently on the bookings page
+          const pageContainer = this.byId("pageContainer");
+          if (pageContainer) {
+            const currentPage = pageContainer.getCurrentPage();
+            if (currentPage && currentPage.getId().includes("page9")) {
+              // We're on the bookings page, refresh the data
+              this._loadStoredBookings();
+              this._loadNsmanDataForBookingsPage();
+              console.log("Bookings page refreshed after new booking");
+            }
+          }
+        } catch (error) {
+          console.error("Error refreshing bookings page:", error);
+        }
+      },
+
       // Helper method to get current location (customize as needed)
       _getCurrentLocation: function () {
         // You can implement geolocation or return a default/configured location
@@ -3050,6 +3112,7 @@ sap.ui.define(
       },
 
       // Store booking in frontend storage that persists across pages
+      // Only allows one booking at a time - new booking replaces existing one
       _storeBooking: function (booking) {
         try {
           // Get existing bookings from the model or create empty array
@@ -3063,17 +3126,19 @@ sap.ui.define(
             sap.ui.getCore().setModel(oGlobalModel, "globalBookings");
           }
 
-          let aBookings = oGlobalModel.getProperty("/bookings") || [];
-
-          // Add new booking
-          aBookings.push(booking);
+          // Clear existing bookings and store only the new one
+          // This ensures only one booking exists at any time
+          const aBookings = [booking];
 
           // Update the model
           oGlobalModel.setProperty("/bookings", aBookings);
 
           // Note: Component data storage removed due to setComponentData not being available
 
-          console.log("Total bookings stored:", aBookings.length);
+          console.log(
+            "Booking stored (replaced any existing booking):",
+            booking.bookingNo
+          );
         } catch (error) {
           console.error("Error in _storeBooking:", error);
           throw error;
