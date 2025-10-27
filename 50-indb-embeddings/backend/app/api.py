@@ -11,7 +11,8 @@ from datetime import datetime
 from flask import Flask, request, jsonify, json, Response
 from flask_cors import CORS
 from hana_ml import dataframe
-from langchain.prompts import PromptTemplate
+# from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sql_formatter.core import format_sql
 from gen_ai_hub.proxy.langchain.openai import ChatOpenAI
